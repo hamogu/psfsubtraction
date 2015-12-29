@@ -3,25 +3,34 @@ import numpy as np
 
 # regionlist
 def regionlist_template(self):
+    '''
+    Returns
+    -------
+    regionlist : iterable
+        Iterable (e.g. a list) of all regions to fit.
+    '''
     raise NotImplementedError
     return regionlist  # list of 1d index arrays
 
 
 def image_at_once(self):
-    return self.dim2to1(np.ones_like(self.image))
+    return [np.ones_like(self.image1d, dtype=bool)]
 
 
 def image_unmasked(self):
-    return self.dim2to1(~self.image.mask)
+    if hasattr(self.image, 'mask'):
+        return [~np.ma.getmaskarray(self.image1d)]
+    else:
+        return image_at_once()
 
 
 # fitregion
-def fitregion_template(self, region):
+def fitregion_template(self, region, indpsf):
     raise NotImplementedError
     return fitregion
 
 
-def fitregion_identity(self, region):
+def fitregion_identity(self, region, indpsf):
     return region
 
 
@@ -32,16 +41,16 @@ def findbase_template(self, region):
 
 
 def findbase_allbases(self, region):
-    return np.ones((self.psfbase.shape[2]))
+    return np.ones((self.psfbase.shape[2]), dtype=bool)
 
 
 # fit psf_coeff
 def fitpsfcoeff_template(self, image1d, psfbase):
-    raise NotImpementedError
+    raise NotImplementedError
     return psf_coeff
 
 
-def psf_from_projection(image1d, psfbase):
+def psf_from_projection(self, image1d, psfbase):
     '''solve a linear algebra system for the best PSF
 
     Parameters
@@ -63,7 +72,7 @@ def psf_from_projection(image1d, psfbase):
     return psf_coeff
 
 
-class PSFsubtraction(object):
+class PSFSubtraction(object):
 
     '''The region that is used for fitting.
 
@@ -77,14 +86,10 @@ class PSFsubtraction(object):
     surrounding flat region, then we will be left with the source after the
     subtraction - exactly what we want.
     '''
-    regionlist = regionlist_template
+    regions = regionlist_template
     findbase = findbase_template
     fitregion = fitregion_template
     fitpsfcoeff = fitpsfcoeff_template
-
-    '''An iterator or list of the regions that should be fitted.'''
-    def regions(self):
-        return self.image
 
     def __init__(self, image, psfbase):
         if image.shape != psfbase.shape[:2]:
@@ -103,11 +108,13 @@ class PSFsubtraction(object):
         return array1d.reshape(self.image.shape)
 
     def fit_psf(self):
-        psf = np.zeros_like(self.image1d)
-        psf.mask = True
-        for region in self.regionlist():
+        # psf = np.zeros_like(self.image1d)
+        # For numpy < 1.9 this results in psf.mask is self.image1d.mask
+        psf = np.ma.zeros(len(self.image1d))
+        psf[:] = np.ma.masked
+        for region in self.regions():
             indpsf = self.findbase(region)  # select which bases to use
-            fitregion = self.fitregion(region)  # select which region to fit
+            fitregion = self.fitregion(region, indpsf)  # select which region to fit
             psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
                                          self.psfbase1d[:, indpsf][fitregion, :])
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
