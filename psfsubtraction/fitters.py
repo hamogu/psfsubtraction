@@ -71,6 +71,10 @@ class PSFFitter(object):
                                  psf_coeff)
         return psf
 
+    def remove_psf(self):
+        psf = self.fit_psf()
+        return self.image1d - psf
+
 
 class SimpleLinearSubtraction(PSFFitter):
     '''Simple examples of PSF fitting.
@@ -89,6 +93,4 @@ class ExtremeLOCI(PSFFitter):
     fitpsfcoeff = fitpsf.psf_from_projection
     findbase = findbase.nonmaskedbases
     fitregion = fitregion.all_unmasked
-
     regions = regions.group_by_basis
-    min_usable_bases = 35
