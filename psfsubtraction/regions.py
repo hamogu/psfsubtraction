@@ -1,23 +1,34 @@
-from itertools import imap, ifilterfalse
+'''Functions that construct an iterable to iterate over regions.
+
+These functions meant to be included into a `PSFFitter` object and this they
+all take the ``self`` argument.
+The function should return an iterable, e.g. an iterator or a list of regions.
+A "region" can either be a True/False index array of the same size as the
+image or a list or numpy array of integers that can be used as index array.
+Both of these are valid return formats and depending on the implementation
+of each function the one or the other might be more convenient.
+'''
 from collections import defaultdict
-from warnings import warn
+
 import numpy as np
 
-from fit import PSFSubtraction
-from fit import image_unmasked, findbase_allbases, fitregion_identity, \
-    psf_from_projection
 
+def image_at_once(self):
+    '''Fit whole image at one.
 
-class SimpleLinearSubtraction(PSFSubtraction):
-    '''Simple examples of PSF fitting.
-
-    - The whole (unmasked) image is fit at once
-    - using all bases.
+    Returns
+    -------
+    regions: list
+        List of one element (the image)
     '''
-    regions = image_unmasked
-    findbase = findbase_allbases
-    fitregion = fitregion_identity
-    fitpsfcoeff = psf_from_projection
+    return [np.ones_like(self.image1d, dtype=bool)]
+
+
+def image_unmasked(self):
+    if hasattr(self.image, 'mask'):
+        return [~np.ma.getmaskarray(self.image1d)]
+    else:
+        return image_at_once()
 
 
 def mask_except_pixel(self, pix):
@@ -89,42 +100,3 @@ def group_by_basis(self):
             D[tuple(basemask[i, :])].append(i)
 
     return D.values()
-
-
-class ExtremeLOCI(PSFSubtraction):
-
-    fitpsfcoeff = psf_from_projection
-    regions = group_by_basis
-    min_usable_bases = 35
-
-    def findbase(self, region):
-        '''Return all bases that are not masked in any pixel in region'''
-        indbase = ~np.ma.getmaskarray(self.psfbase1d)[region, :]
-        # region could have several pixels in it.
-        # region could be
-        # - np.array/list/tuple of True / False
-        # - np.array/list/tuple of index numbers
-        check = np.asanyarray(region)
-        if (check.dtype == bool and check.sum() == 0) or (len(check) == 0):
-            raise ValueError('The input region selects no pixel.')
-        else:
-            return np.min(indbase, axis=0)
-
-    def fitregion(self, region, indpsf):
-        '''Here we select the maximal region.
-
-        The region is maximal in the sense that it includes all pixels that are
-        not masked in the data or any of the bases.
-
-        Returns
-        -------
-        fitregion : np.array of type bool
-            True for those pixels that should be included in the fit
-        '''
-        psfmask = np.max(np.ma.getmaskarray(self.psfbase1d[:, indpsf]), axis=1)
-        datamask = np.ma.getmaskarray(self.image1d)
-        fitregion = ~psfmask & ~datamask
-
-        if fitregion.sum() <= (indpsf != False).sum():
-            warn('Fit underdetermined. Choose larger fit region or smaller base.')
-        return fitregion
