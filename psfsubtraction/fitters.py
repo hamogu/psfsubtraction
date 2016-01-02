@@ -6,20 +6,45 @@ import fitregion
 import fitpsf
 
 
-class PSFFitter(object):
+class BasePSFFitter(object):
+    '''Base object for PSF fitting.
 
-    '''The region that is used for fitting.
-
-    This can be different from ``region``. In fact, it is usually a good idea
-    not to use the region where we want to perform the subtraction in the fit,
-    otherwise the fit will be biased to oversubtract.
-    For example, if the base PSF is flat, and the region we are looking at
-    contains some flat area and also a source, then the fit might tell us to
-    subtract a constant so that the mean of the subtracted data is zero.
-    Instead, if we look for the best fit for the source and we use only the
-    surrounding flat region, then we will be left with the source after the
-    subtraction - exactly what we want.
+    Parameters
+    ----------
+    image : np.array of shape (n,m)
+        N, M array
+    psfbase : np.ndarray of shape (n, m, k)
+        array of psfbases. (n, m) are the dimensions of each image
+        and there are k potential elements of the PSF base.
     '''
+    def __init__(self, image, psfbase):
+        if image.shape != psfbase.shape[:2]:
+            raise ValueError('Each PSF must have same dimension as image.')
+        if len(psfbase.shape) != 3:
+            raise ValueError('psfbase must have 3 dim [im_x, im_y, n]')
+        self.image = image
+        self.psfbase = psfbase
+
+    ### Convenience functions and infrastructure ###
+
+    @property
+    def image1d(self):
+        return self.dim2to1d(self.image)
+
+    @property
+    def psfbase1d(self):
+        return self.psfbase.reshape((-1, self.psfbase.shape[2]))
+
+    def dim2to1(self, array2d):
+        '''Flatten image'''
+        return array2d.ravel()
+
+    def dim1to2(self, array1d):
+        '''Reshape flattened image to 2 d.'''
+        return array1d.reshape(self.image.shape)
+
+    ### Functions that should be overwritten by child classes ###
+
     def regions(self):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
@@ -36,21 +61,7 @@ class PSFFitter(object):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
-    def __init__(self, image, psfbase):
-        if image.shape != psfbase.shape[:2]:
-            raise ValueError('Each PSF must have same dimension as image.')
-        if len(psfbase.shape) != 3:
-            raise ValueError('psfbase must have 3 dim [im_x, im_y, n]')
-        self.image = image
-        self.image1d = self.dim2to1(image)
-        self.psfbase = psfbase
-        self.psfbase1d = psfbase.reshape((-1, psfbase.shape[2]))
-
-    def dim2to1(self, array2d):
-        return array2d.ravel()
-
-    def dim1to2(self, array1d):
-        return array1d.reshape(self.image.shape)
+    ### Here the actual work is done ###
 
     def fit_psf(self):
         # This line triggers in bug in numpy < 1.9
@@ -76,7 +87,7 @@ class PSFFitter(object):
         return self.image1d - psf
 
 
-class SimpleLinearSubtraction(PSFFitter):
+class SimpleSubtraction(BasePSFFitter):
     '''Simple examples of PSF fitting.
 
     - The whole (unmasked) image is fit at once
@@ -88,7 +99,7 @@ class SimpleLinearSubtraction(PSFFitter):
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
-class ExtremeLOCI(PSFFitter):
+class ExtremeLOCI(BasePSFFitter):
 
     fitpsfcoeff = fitpsf.psf_from_projection
     findbase = findbase.nonmaskedbases

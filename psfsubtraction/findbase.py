@@ -21,14 +21,14 @@ def allbases(self, region):
 
 
 def nonmaskedbases(self, region):
-        '''Return all bases that are not masked in any pixel in region'''
-        indbase = ~np.ma.getmaskarray(self.psfbase1d)[region, :]
-        # region could have several pixels in it.
-        # region could be
-        # - np.array/list/tuple of True / False
-        # - np.array/list/tuple of index numbers
-        check = np.asanyarray(region)
-        if (check.dtype == bool and check.sum() == 0) or (len(check) == 0):
-            raise ValueError('The input region selects no pixel.')
-        else:
-            return np.min(indbase, axis=0)
+    '''Return all bases that are not masked in any pixel in region'''
+    indbase = ~np.ma.getmaskarray(self.psfbase1d)[region, :]
+    # region could have several pixels in it.
+    # region could be
+    # - np.array/list/tuple of True / False
+    # - np.array/list/tuple of index numbers
+    check = np.asanyarray(region)
+    if (check.dtype == bool and check.sum() == 0) or (len(check) == 0):
+        raise ValueError('The input region selects no pixel.')
+    else:
+        return np.min(indbase, axis=0)

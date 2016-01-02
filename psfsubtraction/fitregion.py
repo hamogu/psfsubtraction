@@ -2,9 +2,12 @@
 
 The "fit region" is the region used in the fitting to find the best PSF for a
 region. The "fit region" can (but usually will not) be identical to the region.
-For example, to find the best fitting PSF for pixel A, one might want to
-optimize using an annulus around the region.
-If the region itself is used in the fit, the PSF might be oversubtracted.
+For example, if the base PSF is flat, and the region we are looking at
+contains some flat area and also a source, then the fit might tell us to
+subtract a constant so that the mean of the subtracted data is zero.
+Instead, if we look for the best fit for the source and we use only the
+surrounding flat region, then we will be left with the source after the
+subtraction - exactly what we want.
 
 These functions meant to be included into a `PSFFitter` object and this they
 all take the ``self`` argument.
@@ -24,6 +27,7 @@ import numpy as np
 
 
 def identity(self, region, indpsf):
+    '''Return a input region as fit region.'''
     return region
 
 

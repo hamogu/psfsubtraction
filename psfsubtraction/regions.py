@@ -1,6 +1,6 @@
 '''Functions that construct an iterable to iterate over regions.
 
-These functions meant to be included into a `PSFFitter` object and this they
+These functions meant to be included into a `PSFFitter` object and thus they
 all take the ``self`` argument.
 The function should return an iterable, e.g. an iterator or a list of regions.
 A "region" can either be a True/False index array of the same size as the
@@ -25,6 +25,13 @@ def image_at_once(self):
 
 
 def image_unmasked(self):
+    '''Return the unmasked part of an image.
+
+    Returns
+    -------
+    regions: list
+        List of one element (the image)
+    '''
     if hasattr(self.image, 'mask'):
         return [~np.ma.getmaskarray(self.image1d)]
     else:
