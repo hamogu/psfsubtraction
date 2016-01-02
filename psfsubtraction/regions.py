@@ -3,10 +3,8 @@
 These functions meant to be included into a `PSFFitter` object and thus they
 all take the ``self`` argument.
 The function should return an iterable, e.g. an iterator or a list of regions.
-A "region" can either be a True/False index array of the same size as the
-image or a list or numpy array of integers that can be used as index array.
-Both of these are valid return formats and depending on the implementation
-of each function the one or the other might be more convenient.
+A "region" should be be a True/False index array of the same size as the
+image.
 '''
 from collections import defaultdict
 
