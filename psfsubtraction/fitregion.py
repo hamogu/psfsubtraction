@@ -21,10 +21,11 @@ All functions here take three arguments:
 and return a "fit region" which has the same format as `region`.
 
 '''
-from warning import warn
+from warnings import warn
 
 import numpy as np
 
+from .utils import OptionalAttributeError
 
 def identity(self, region, indpsf):
     '''Return a input region as fit region.'''
@@ -46,16 +47,16 @@ def all_unmasked(self, region, indpsf):
     datamask = np.ma.getmaskarray(self.image1d)
     fitregion = ~psfmask & ~datamask
 
-    if fitregion.sum() <= (indpsf != False).sum():
+    if fitregion.sum() <= np.asarray(indpsf).sum():
         warn('Fit underdetermined. Choose larger fit region or smaller base.')
     return fitregion
 
 def wrapper_fitmask(func):
-    '''Use a function fot the fitregion with an additional global mask.
+    '''Use a function fit the fitregion with an additional global mask.
 
     This function wraps the fitregion function ``func``. Fit regions are
     determined by that function, but are then additionally filtered
-    such that points that are masked as ``True`` in self.fitmask are
+    such that points that are masked as ``True`` in ``self.fitmask`` are
     not included in the fit region.
 
     One use case is an image with a source hidden in the PSF. Assume that
@@ -71,10 +72,16 @@ def wrapper_fitmask(func):
         function to be wrapped.
     '''
     def func_and_fitmask(self, region, indpsf):
-        fitregion = func(region, indpsf)
+        if not hasattr(self, "fitmask"):
+            raise OptionalAttributeError('Fit object needs to define a boolean array fitmask.')
+        if not hasattr(self.fitmask, "shape") or \
+           not ((self.fitmask.shape == self.image.shape) or
+                (self.fitmask.shape == self.image1d.shape)):
+            raise OptionalAttributeError('"fitmask" must have same shape as image.')
+        fitregion = func(self, region, indpsf)
 
-        fitregion_and_fitmask = fitregion & ~self.fitmask
-        if fitregion_and_fitmask.sum() <= (indosf != False).sum():
+        fitregion_and_fitmask = fitregion & ~self.fitmask.flatten()
+        if fitregion_and_fitmask.sum() <= np.asarray(indpsf).sum():
             warn('Fit underdetermined. Ignoring fitmask.')
             return fitregion
         else:

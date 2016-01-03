@@ -29,7 +29,7 @@ class BasePSFFitter(object):
 
     @property
     def image1d(self):
-        return self.dim2to1d(self.image)
+        return self.dim2to1(self.image)
 
     @property
     def psfbase1d(self):
