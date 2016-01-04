@@ -4,7 +4,7 @@ These functions meant to be included into a `PSFFitter` object and thus they
 all take the ``self`` argument.
 The function should return an iterable, e.g. an iterator or a list of regions.
 A "region" should be be a True/False index array of the same size as the
-image.
+flattend (1-dimensional representation) image.
 '''
 from collections import defaultdict
 
@@ -33,7 +33,7 @@ def image_unmasked(self):
     if hasattr(self.image, 'mask'):
         return [~np.ma.getmaskarray(self.image1d)]
     else:
-        return image_at_once()
+        return image_at_once(self)
 
 
 def mask_except_pixel(self, pix):
