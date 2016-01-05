@@ -84,7 +84,7 @@ class BasePSFFitter(object):
 
     def remove_psf(self):
         psf = self.fit_psf()
-        return self.image1d - psf
+        return self.dim1to2(self.image1d - psf)
 
 
 class SimpleSubtraction(BasePSFFitter):
@@ -99,9 +99,8 @@ class SimpleSubtraction(BasePSFFitter):
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
-class ExtremeLOCI(BasePSFFitter):
-
-    fitpsfcoeff = fitpsf.psf_from_projection
+class UseAllPixelsSubtraction(BasePSFFitter):
+    regions = regions.group_by_basis
     findbase = findbase.nonmaskedbases
     fitregion = fitregion.all_unmasked
-    regions = regions.group_by_basis
+    fitpsfcoeff = fitpsf.psf_from_projection
