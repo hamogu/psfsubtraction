@@ -6,6 +6,8 @@ The function should return an iterable, e.g. an iterator or a list of regions.
 A "region" should be be a True/False index array of the same size as the
 flattend (1-dimensional representation) image.
 '''
+from __future__ import division
+
 from collections import defaultdict
 
 import numpy as np
@@ -105,3 +107,20 @@ def group_by_basis(self):
             D[tuple(basemask[i, :])].append(i)
 
     return D.values()
+
+def sectors(radius, delta_phi, center=None):
+    '''
+
+    Parameters
+    ----------
+    center : tuple or None
+        x, y position of the center of all sectors (in pixel coordinates).
+        ``None`` selects the center of the input image.
+    '''
+    def sector_regions(self):
+        if center is None:
+            center = np.array(self.image.shape) / 2.
+        for ri in range(len(radius) -1):
+            for phii in
+
+    return sector_regions
