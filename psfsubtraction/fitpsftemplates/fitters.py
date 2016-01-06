@@ -80,7 +80,7 @@ class BasePSFFitter(object):
                                          self.psfbase1d[:, indpsf][fitregion, :])
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
                                  psf_coeff)
-        return psf
+        return self.dim1to2(psf)
 
     def remove_psf(self):
         psf = self.fit_psf()

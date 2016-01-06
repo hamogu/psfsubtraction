@@ -86,6 +86,9 @@ def group_by_basis(self):
     are valid at that pixel.
     It then groups pixels with the same valid bases into one region.
 
+    If ``self.min_number_of_bases`` is set to an integer, only regions with
+    at least that many valid bases are returned (default is 1).
+
     Theoretically, there could be 2^60 combinations of bases for 60 bases,
     but in practice the valid pixels in the bases are not randomly
     distributed, so that typically a much smaller number of regions is
@@ -98,10 +101,13 @@ def group_by_basis(self):
     imagemask = np.ma.getmaskarray(self.image1d)
     basemask = np.ma.getmaskarray(self.psfbase1d)
 
+    min_bases = getattr(self, "min_number_of_bases", 1)
+
     D = defaultdict(list)
     for i in range(imagemask.shape[0]):
-        # Add to the dict UNLESS the image itself is masked.
-        if not imagemask[i]:
+        # Add to the dict UNLESS the image itself is masked or TOO FEW bases
+        # are valid
+        if not imagemask[i] and ((~basemask[i, :]).sum() >= min_bases):
             D[tuple(basemask[i, :])].append(i)
 
     return D.values()

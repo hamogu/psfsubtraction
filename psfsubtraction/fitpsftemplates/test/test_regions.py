@@ -18,22 +18,24 @@ def test_image_at_once():
     assert regs[0].shape == (9, )
     assert np.all(regs[0] == ~image.mask.flatten())
 
+
 def test_image_unmasked():
     class psf(fitters.SimpleSubtraction):
         regions = regions.image_unmasked
 
-    #image with mask
+    # image with mask
     f = psf(image, psfarray)
     regs = f.regions()
     assert len(regs) == 1
     assert np.all(regs[0] == ~image.mask.flatten())
 
     # image without mask
-    f = psf(np.ones((3,3)), psfarray)
+    f = psf(np.ones((3, 3)), psfarray)
     regs = f.regions()
     assert len(regs) == 1
     assert regs[0].shape == (9, )
     assert np.all(regs[0])
+
 
 def test_group_by_basis():
     class psf(fitters.SimpleSubtraction):
@@ -46,7 +48,7 @@ def test_group_by_basis():
     r1 = np.array([True, True, False, True, True, False, True, False, False])
     r2 = np.array([False, False, False, False, False, True, False, False, False])
     r3 = np.array([False, False, True, False, False, False, False, False, False])
-    # We don't know the order of regs, so chekc if any of the three matches
+    # We don't know the order of regs, so check if any of the three matches
     # and keep a list of which one matches which.
     regfound = []
     for r in regs:
@@ -55,3 +57,6 @@ def test_group_by_basis():
                 regfound.append(i)
                 break
     assert set(regfound) == set([0, 1, 2])
+
+    f.min_number_of_bases = 2
+    assert len(f.regions()) == 1
