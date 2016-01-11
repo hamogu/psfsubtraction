@@ -110,7 +110,7 @@ def group_by_basis(self):
 
     return D.values()
 
-def sectors(radius, phi, center):
+def sectors(radius, phi, image_center=None):
     '''Generate a function that generates sector regions
 
     A pixel is included in a region, if its center falls within the boundaries.
@@ -125,7 +125,7 @@ def sectors(radius, phi, center):
         If this is an `astropy.quantity` it is interpreted as the
         boundaries of the angular bins. It should cover the range from
         0 to 2 pi (or 360 deg, if units is degrees).
-    center : tuple or None
+    image_center : tuple or None
         x, y position of the center of all sectors (in pixel coordinates).
         ``None`` selects the center of the input image.
 
@@ -148,8 +148,10 @@ def sectors(radius, phi, center):
         phi = np.linspace(0, 2 * np.pi, int(phi) + 1) * u.radian
 
     def sector_regions(self):
-        if center is None:
+        if image_center is None:
             center = np.array(self.image.shape) / 2.
+        else:
+            center = image_center
         indices = np.indices(self.image.shape)
         x = indices[0, ...] - center[0]
         y = indices[1, ...] - center[1]
@@ -165,4 +167,4 @@ def sectors(radius, phi, center):
                 yield (r >= radius[ri]) & (r < radius[ri + 1]) \
                     & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
 
-     return sector_regions
+    return sector_regions
