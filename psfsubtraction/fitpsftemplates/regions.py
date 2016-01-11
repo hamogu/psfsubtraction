@@ -110,8 +110,8 @@ def group_by_basis(self):
 
     return D.values()
 
-def sectors(radius, phi, centerin=None):
-    '''Generate regions, such that each one covers a sector
+def sectors(radius, phi, center):
+    '''Generate a function that generates sector regions
 
     A pixel is included in a region, if its center falls within the boundaries.
 
@@ -148,10 +148,8 @@ def sectors(radius, phi, centerin=None):
         phi = np.linspace(0, 2 * np.pi, int(phi) + 1) * u.radian
 
     def sector_regions(self):
-        if centerin is None:
+        if center is None:
             center = np.array(self.image.shape) / 2.
-        else:
-            center = centerin
         indices = np.indices(self.image.shape)
         x = indices[0, ...] - center[0]
         y = indices[1, ...] - center[1]
@@ -167,4 +165,4 @@ def sectors(radius, phi, centerin=None):
                 yield (r >= radius[ri]) & (r < radius[ri + 1]) \
                     & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
 
-    return sector_regions
+     return sector_regions

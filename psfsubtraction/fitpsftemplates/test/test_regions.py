@@ -68,7 +68,7 @@ def test_sector_regions():
         for r, phi in zip([np.arange(55), np.array([0, 1, 5, 55])],
                       [5, np.linspace(0., 360., 5.) * u.degree]):
             class psf(fitters.SimpleSubtraction):
-                regions = regions.sectors(r, phi)
+                regions = regions.sectors(r, phi, center=center)
 
             f = psf(im, psfs)
             regs = np.dstack(list(f.regions()))
@@ -78,7 +78,7 @@ def test_sector_regions():
 
     # test a region that has a hole in the middle
         class psf(fitters.SimpleSubtraction):
-            regions = regions.sectors([5, 10, 50], phi)
+            regions = regions.sectors([5, 10, 50], phi, center=center)
 
         f = psf(im, psfs)
         regs = np.dstack(list(f.regions()))
