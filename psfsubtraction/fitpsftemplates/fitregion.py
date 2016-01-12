@@ -24,6 +24,7 @@ and return a "fit region" which has the same format as `region`.
 from warnings import warn
 
 import numpy as np
+from scipy.ndimage import binary_dilation
 
 from .utils import OptionalAttributeError
 
@@ -50,6 +51,69 @@ def all_unmasked(self, region, indpsf):
     if fitregion.sum() <= np.asarray(indpsf).sum():
         warn('Fit underdetermined. Choose larger fit region or smaller base.')
     return fitregion
+
+def dilated_region(self, region, indpsf):
+    '''Specify a fit region that extends around the ``region``.
+
+    This requires that the fitter has an attribute ``dilatation_region``, which can be
+
+    - an int: In this case a square matrix of size 2 * n + 1 is used.
+    - a matrix (see `scipy.ndimage.binary_dilation` for details.
+
+    Example
+    -------
+
+    >>> from psfsubtraction.fitpsftemplates import fitters
+    >>> from psfsubtraction.fitpsftemplates import fitregion
+    >>> region = [[True, False, False], \
+                  [False, False, False], \
+                  [False, False, False]]
+    >>> class DilationFitter(fitters.SimpleSubtraction):
+    ...     fitregion = fitregion.dilated_region
+    ...     dilation_region = 1
+    >>> dummy_image = np.ones((3, 3)) # boring image, but good enough for the example
+    >>> dummy_psfs = np.ones((3,3,4)) # even more boring psf array.
+    >>> myfitter = DilationFitter(dummy_image, dummy_psfs)
+    >>> myfitter.fitregion(region, [0])
+    array([[ True,  True, False],
+           [ True,  True, False],
+           [False, False, False]], dtype=bool)
+    '''
+    if not hasattr(self, 'dilation_region'):
+        raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
+                                     + 'which is either and int or a square matrix.')
+    if np.isscalar(self.dilation_region):
+        selem = np.ones((2 * self.dilation_region + 1, 2 * self.dilation_region + 1))
+    else:
+        selem = self.dilation_region
+    return binary_dilation(region, selem)
+
+def around_region(self, region, indpsf):
+    '''similar to `dilated_region`, but exclude all pixels in ``region`` itself.
+
+    See `dilated_region` for options.
+
+    Example
+    -------
+
+    >>> from psfsubtraction.fitpsftemplates import fitters
+    >>> from psfsubtraction.fitpsftemplates import fitregion
+    >>> region = [[True, False, False], \
+                  [False, False, False], \
+                  [False, False, False]]
+    >>> dummy_image = np.ones((3, 3)) # boring image, but good enough for the example
+    >>> dummy_psfs = np.ones((3,3,4)) # even more boring psf array.
+    >>> class AroundFitter(fitters.SimpleSubtraction):
+    ...     fitregion = fitregion.around_region
+    ...     dilation_region = 1
+    >>> myfitter = AroundFitter(dummy_image, dummy_psfs)
+    >>> myfitter.fitregion(region, [0])
+    array([[False,  True, False],
+           [ True,  True, False],
+           [False, False, False]], dtype=bool)
+    '''
+    fitreg = dilated_region(self, region, indpsf)
+    return fitreg & ~np.asarray(region)
 
 def wrapper_fitmask(func):
     '''Use a function fit the fitregion with an additional global mask.
