@@ -10,6 +10,13 @@ from __future__ import division
 
 from collections import defaultdict
 
+# Python 2/3
+try:
+    import itertools.imap as map
+except ImportError:
+    pass
+
+
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import Angle
@@ -79,8 +86,8 @@ def pixel_by_pixel(self):
     # All pixels to be used are marked True.
     mask = image_unmasked(self)[0]
 
-    return imap(mask_except_pixel,
-                ifilterfalse(lambda x: mask[x], range(len(mask))))
+    return map(mask_except_pixel,
+               ifilterfalse(lambda x: mask[x], range(len(mask))))
 
 
 def group_by_basis(self):
@@ -115,6 +122,7 @@ def group_by_basis(self):
             D[tuple(basemask[i, :])].append(i)
 
     return D.values()
+
 
 def sectors(radius, phi, image_center=None):
     '''Generate a function that generates sector regions

@@ -52,6 +52,7 @@ def all_unmasked(self, region, indpsf):
         warn('Fit underdetermined. Choose larger fit region or smaller base.')
     return fitregion
 
+
 def dilated_region(self, region, indpsf):
     '''Specify a fit region that extends around the ``region``.
 
@@ -88,6 +89,7 @@ def dilated_region(self, region, indpsf):
         selem = self.dilation_region
     return binary_dilation(region, selem)
 
+
 def around_region(self, region, indpsf):
     '''similar to `dilated_region`, but exclude all pixels in ``region`` itself.
 
@@ -114,6 +116,7 @@ def around_region(self, region, indpsf):
     '''
     fitreg = dilated_region(self, region, indpsf)
     return fitreg & ~np.asarray(region)
+
 
 def wrapper_fitmask(func):
     '''Use a function fit the fitregion with an additional global mask.

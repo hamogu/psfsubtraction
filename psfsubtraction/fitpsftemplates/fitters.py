@@ -6,6 +6,16 @@ import fitregion
 import fitpsf
 
 
+class RegionError(Exception):
+    '''Region does not have the right shape or dtype'''
+    pass
+
+
+class PSFIndexError(Exception):
+    '''PSF Index array does not have the right shape or dtype'''
+    pass
+
+
 class BasePSFFitter(object):
     '''Base object for PSF fitting.
 
@@ -64,7 +74,7 @@ class BasePSFFitter(object):
     ### Some wrapper around the above classes to unify output formats, check
     ### validity etc.
 
-    def anyreg_to_mask(reg):
+    def anyreg_to_mask(self, reg):
         '''Convert any type of a region definition to a 1d boolean mask.
 
         Also check that the region has the correct size.
@@ -75,8 +85,8 @@ class BasePSFFitter(object):
         '''
         r = np.asanyarray(reg)
         # Index array like [1,5,12,23]
-        if (r.ndim == 1) and issubdtype(r.dtype, np.int64):
-            region = np.zeros((self.image1d.shape), dype=bool)
+        if (r.ndim == 1) and np.issubdtype(r.dtype, np.int64):
+            region = np.zeros((self.image1d.shape), dtype=bool)
             region[r] = True
             r = region
         if r.ndim == 2:
@@ -85,10 +95,10 @@ class BasePSFFitter(object):
             raise RegionError("Every region must have the same shape as the image.")
         return r
 
-    def baseind_to_mask(indpsf):
+    def baseind_to_mask(self, indpsf):
         '''Convert any type of psf base index to boolen mask.'''
-        indpsf = np.ayanyarray(indpsf)
-        if (r.ndim == 1) and issubdtype(r.dtype, np.int64):
+        indpsf = np.asanyarray(indpsf)
+        if (indpsf.ndim == 1) and np.issubdtype(indpsf.dtype, np.int64):
             ind = np.zeros((self.psfbase.shape[2]), dype=bool)
             ind[indpsf] = True
             indpsf = ind
@@ -96,8 +106,7 @@ class BasePSFFitter(object):
             raise PSFIndexError("PSF index shape does not match the shape of the psf base.")
         return indpsf
 
-
-    def iter_regions():
+    def iter_regions(self):
         '''Convert all allowed regions formats to a 1d boolean mask array'''
         for r in self.regions():
             yield self.anyreg_to_mask(r)
@@ -118,8 +127,10 @@ class BasePSFFitter(object):
             indpsf = self.baseind_to_mask(self.findbase(region))
             # Select which region to use in the optimization
             fitregion = self.anyreg_to_mask(self.fitregion(region, indpsf))
+            # Perform fit on the fitregion
             psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
                                          self.psfbase1d[:, indpsf][fitregion, :])
+            # Use psfcoeff to estimate the psf in `region`
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
                                  psf_coeff)
         return self.dim1to2(psf)

@@ -41,10 +41,11 @@ def example40_40():
 
     psf1 = multivariate_normal([0, 0.], [[2.0, 0.3], [0.3, 0.5]]).pdf(pos)
     psf2 = multivariate_normal([0, 0.], [[1.0, 0.3], [0.3, 0.7]]).pdf(pos)
-    psf3 = multivariate_normal([0, 0.], [[0.3, 2.0], [0.5, 0.3]]).pdf(pos)
+    psf3 = multivariate_normal([0, 0.], [[1.0, 0], [0, 1.]]).pdf(pos)
     psfarray = np.ma.dstack((psf1, psf2, psf3))
 
     image = 1 * psf1 + 2 * psf2 + 3 * psf3
-    image += 0.3 * np.random.rand(image.shape)
+    np.random.seed(0)
+    image += 0.3 * np.random.rand(*image.shape)
 
     return image, psfarray

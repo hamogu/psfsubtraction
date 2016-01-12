@@ -93,7 +93,7 @@ def test_dilated_region_array(example3_3):
     assert np.all(fitreg == expected)
 
 
-def test_region__around_array(example3_3):
+def test_region_around_array(example3_3):
     image, psfarray = example3_3
 
     region = [[True, False, False],
