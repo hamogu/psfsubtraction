@@ -61,6 +61,48 @@ class BasePSFFitter(object):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
+    ### Some wrapper around the above classes to unify output formats, check
+    ### validity etc.
+
+    def anyreg_to_mask(reg):
+        '''Convert any type of a region definition to a 1d boolean mask.
+
+        Also check that the region has the correct size.
+
+        Parameters
+        ----------
+        r : boolean mask of size image in 1d or 2d or 1d integer array
+        '''
+        r = np.asanyarray(reg)
+        # Index array like [1,5,12,23]
+        if (r.ndim == 1) and issubdtype(r.dtype, np.int64):
+            region = np.zeros((self.image1d.shape), dype=bool)
+            region[r] = True
+            r = region
+        if r.ndim == 2:
+            r = r.ravel()
+        if r.shape != self.image1d.shape:
+            raise RegionError("Every region must have the same shape as the image.")
+        return r
+
+    def baseind_to_mask(indpsf):
+        '''Convert any type of psf base index to boolen mask.'''
+        indpsf = np.ayanyarray(indpsf)
+        if (r.ndim == 1) and issubdtype(r.dtype, np.int64):
+            ind = np.zeros((self.psfbase.shape[2]), dype=bool)
+            ind[indpsf] = True
+            indpsf = ind
+        if indpsf.shape != (self.psfbase.shape[2], ):
+            raise PSFIndexError("PSF index shape does not match the shape of the psf base.")
+        return indpsf
+
+
+    def iter_regions():
+        '''Convert all allowed regions formats to a 1d boolean mask array'''
+        for r in self.regions():
+            yield self.anyreg_to_mask(r)
+
+
     ### Here the actual work is done ###
 
     def fit_psf(self):
@@ -71,11 +113,11 @@ class BasePSFFitter(object):
         psf = np.ma.zeros(len(self.image1d))
 
         psf[:] = np.ma.masked
-        for region in self.regions():
+        for region in self.iter_regions():
             # select which bases to use
-            indpsf = self.findbase(region)
+            indpsf = self.baseind_to_mask(self.findbase(region))
             # Select which region to use in the optimization
-            fitregion = self.fitregion(region, indpsf)
+            fitregion = self.anyreg_to_mask(self.fitregion(region, indpsf))
             psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
                                          self.psfbase1d[:, indpsf][fitregion, :])
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
@@ -84,7 +126,7 @@ class BasePSFFitter(object):
 
     def remove_psf(self):
         psf = self.fit_psf()
-        return self.dim1to2(self.image1d - psf)
+        return self.dim1to2(self.image1d) - psf
 
 
 class SimpleSubtraction(BasePSFFitter):
