@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 
 import regions
@@ -109,7 +111,11 @@ class BasePSFFitter(object):
     def iter_regions(self):
         '''Convert all allowed regions formats to a 1d boolean mask array'''
         for r in self.regions():
-            yield self.anyreg_to_mask(r)
+            reg = self.anyreg_to_mask(r)
+            if reg.sum() > 0:
+                yield reg
+            else:
+                warn('Skipping region that includes no pixels.')
 
 
     ### Here the actual work is done ###
@@ -156,4 +162,29 @@ class UseAllPixelsSubtraction(BasePSFFitter):
     regions = regions.group_by_basis
     findbase = findbase.nonmaskedbases
     fitregion = fitregion.all_unmasked
+    fitpsfcoeff = fitpsf.psf_from_projection
+
+
+class LOCI(BasePSFFitter):
+    '''LOCI fitter (locally optimized combination of images
+
+    The loci algorithm was introduced in the following paper
+    `Lafreniere et al. 2007, ApJ, 660, 770 <http://adsabs.harvard.edu/abs/2007ApJ...660..770L>`_.
+
+    The default parameters in this fitter are chosen similar to the shape of
+    the regions used in that paper.
+    '''
+    regions = regions.sectors
+
+    @property
+    def sector_radius(self):
+        return np.logspace(0, np.log10(self.image.shape[1]), 10)
+
+    sector_phi = 12
+
+    findbase = findbase.nonmaskedbases
+
+    fitregion = fitregion.around_region
+    dilation_region = 5
+
     fitpsfcoeff = fitpsf.psf_from_projection

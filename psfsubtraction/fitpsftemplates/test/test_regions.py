@@ -70,20 +70,23 @@ def test_sector_regions():
     for center in [(1, 7), None]:
         for r, phi in zip([np.arange(55), np.array([0, 1, 5, 55])],
                           [5, np.linspace(0., 360., 5.) * u.degree]):
-            class psf(fitters.SimpleSubtraction):
-                regions = regions.sectors(r, phi, center)
+            class PSF(fitters.SimpleSubtraction):
+                regions = regions.sectors
+                sector_radius = r
+                sector_phi = phi
+                sector_center = center
 
-            f = psf(im, psfs)
+            f = PSF(im, psfs)
             regs = np.dstack(list(f.regions()))
             regs = regs.reshape((1200, -1))
             # Test that each pixel is part of one and only one region
             assert np.all(regs.sum(axis=1) == 1)
 
     # test a region that has a hole in the middle
-        class psf(fitters.SimpleSubtraction):
-            regions = regions.sectors([5, 10, 50], phi, center)
+        class PSF2(PSF):
+            sector_radius = [5, 10, 50]
 
-        f = psf(im, psfs)
+        f = PSF2(im, psfs)
         regs = np.dstack(list(f.regions()))
         regs = regs.reshape((1200, -1))
         # Test that each pixel is part of one and only one region

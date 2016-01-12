@@ -56,9 +56,9 @@ def test_wrapper_fitmask(example3_3):
 def test_dilated_region_int(example3_3):
     image, psfarray = example3_3
 
-    region = [[True, False, False],
-              [False, False, False],
-              [False, False, False]]
+    region = np.array([[True, False, False],
+                       [False, False, False],
+                       [False, False, False]])
 
     class DilationFitter(fitters.SimpleSubtraction):
         fitregion = fitregion.dilated_region
@@ -69,15 +69,15 @@ def test_dilated_region_int(example3_3):
     expected = np.array([[True, True, False],
                          [True, True, False],
                          [False, False, False]], dtype=bool)
-    assert np.all(fitreg == expected)
+    assert np.all(fitreg == expected.ravel())
 
 
 def test_dilated_region_array(example3_3):
     image, psfarray = example3_3
 
-    region = [[True, False, False],
-              [False, False, False],
-              [False, False, False]]
+    region = np.array([[True, False, False],
+                       [False, False, False],
+                       [False, False, False]])
 
     class DilationFitter(fitters.SimpleSubtraction):
         fitregion = fitregion.dilated_region
@@ -90,15 +90,15 @@ def test_dilated_region_array(example3_3):
     expected = np.array([[True, True, False],
                          [True, False, False],
                          [False, False, False]], dtype=bool)
-    assert np.all(fitreg == expected)
+    assert np.all(fitreg == expected.ravel())
 
 
 def test_region_around_array(example3_3):
     image, psfarray = example3_3
 
-    region = [[True, False, False],
-              [False, False, False],
-              [False, False, False]]
+    region = np.array([[True, False, False],
+                       [False, False, False],
+                       [False, False, False]])
 
     class DilationFitter(fitters.SimpleSubtraction):
         fitregion = fitregion.around_region
@@ -107,8 +107,8 @@ def test_region_around_array(example3_3):
                                     [False, True, False]])
 
     myfitter = DilationFitter(image, psfarray)
-    fitreg = myfitter.fitregion(region, [0])
+    fitreg = myfitter.fitregion(region.ravel(), [0])
     expected = np.array([[False, True, False],
                          [True, False, False],
                          [False, False, False]], dtype=bool)
-    assert np.all(fitreg == expected)
+    assert np.all(fitreg == expected.ravel())
