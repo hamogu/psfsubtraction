@@ -188,3 +188,7 @@ class LOCI(BasePSFFitter):
     dilation_region = 5
 
     fitpsfcoeff = fitpsf.psf_from_projection
+
+
+class LOCIAllPixelsSubtraction(LOCI):
+    regions = regions.sectors_by_basis

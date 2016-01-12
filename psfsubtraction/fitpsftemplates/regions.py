@@ -112,6 +112,12 @@ def group_by_basis(self):
     regions : list of index arrays
     '''
     imagemask = np.ma.getmaskarray(self.image1d)
+    for r in _by_basis(self, imagemask):
+        yield r
+
+
+def _by_basis(self, imagemask):
+    '''part of group_by_bases, refactored'''
     basemask = np.ma.getmaskarray(self.psfbase1d)
 
     min_bases = getattr(self, "min_number_of_bases", 1)
@@ -123,7 +129,7 @@ def group_by_basis(self):
         if not imagemask[i] and ((~basemask[i, :]).sum() >= min_bases):
             D[tuple(basemask[i, :])].append(i)
 
-    return D.values()
+    return D.itervalues()
 
 
 def sectors(self):
@@ -183,3 +189,13 @@ def sectors(self):
         for phii in range(len(phi) - 1 ):
             yield (r >= radius[ri]) & (r < radius[ri + 1]) \
                 & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
+
+
+def sectors_by_basis(self):
+    '''Combines `sectors` and `group_by_bases`.
+
+    The pixels in every sector will be grouped by their bases.
+    '''
+    for reg in sectors(self):
+        for r in _by_basis(self, ~self.anyreg_to_mask(reg)):
+            yield r

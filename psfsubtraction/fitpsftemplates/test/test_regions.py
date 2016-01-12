@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 import astropy.units as u
 
@@ -7,44 +6,48 @@ from .. import fitters
 from .. import regions
 from ..utils import OptionalAttributeError, bool_indarray
 
-from .small_examples import image, psfarray
 
+def test_image_at_once(example3_3):
+    image, psfarray = example3_3
 
-def test_image_at_once():
     class psf(fitters.SimpleSubtraction):
         regions = regions.image_at_once
 
     f = psf(image, psfarray)
     regs = f.regions()
-    assert len(regs) == 1
+    assert len(list(regs)) == 1
     assert regs[0].shape == (9, )
     assert np.all(regs[0] == ~image.mask.flatten())
 
 
-def test_image_unmasked():
+def test_image_unmasked(example3_3):
+    image, psfarray = example3_3
+
     class psf(fitters.SimpleSubtraction):
         regions = regions.image_unmasked
 
     # image with mask
     f = psf(image, psfarray)
-    regs = f.regions()
+    regs = list(f.regions())
     assert len(regs) == 1
     assert np.all(regs[0] == ~image.mask.flatten())
 
     # image without mask
     f = psf(np.ones((3, 3)), psfarray)
-    regs = f.regions()
+    regs = list(f.regions())
     assert len(regs) == 1
     assert regs[0].shape == (9, )
     assert np.all(regs[0])
 
 
-def test_group_by_basis():
+def test_group_by_basis(example3_3):
+    image, psfarray = example3_3
+
     class psf(fitters.SimpleSubtraction):
         regions = regions.group_by_basis
 
     f = psf(image, psfarray)
-    regs = f.regions()
+    regs = list(f.regions())
     assert len(regs) == 3
     # order is given by implementation, but does not matter at all.
     r1 = np.array([True, True, False, True, True, False, True, False, False])
@@ -61,7 +64,7 @@ def test_group_by_basis():
     assert set(regfound) == set([0, 1, 2])
 
     f.min_number_of_bases = 2
-    assert len(f.regions()) == 1
+    assert len(list(f.regions())) == 1
 
 
 def test_sector_regions():
