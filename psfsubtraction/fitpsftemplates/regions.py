@@ -10,9 +10,18 @@ from __future__ import division
 
 from collections import defaultdict
 
+# Python 2/3
+try:
+    import itertools.imap as map
+except ImportError:
+    pass
+
+
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import Angle
+
+from .utils import OptionalAttributeError
 
 
 def image_at_once(self):
@@ -79,8 +88,8 @@ def pixel_by_pixel(self):
     # All pixels to be used are marked True.
     mask = image_unmasked(self)[0]
 
-    return imap(mask_except_pixel,
-                ifilterfalse(lambda x: mask[x], range(len(mask))))
+    return map(mask_except_pixel,
+               ifilterfalse(lambda x: mask[x], range(len(mask))))
 
 
 def group_by_basis(self):
@@ -103,6 +112,12 @@ def group_by_basis(self):
     regions : list of index arrays
     '''
     imagemask = np.ma.getmaskarray(self.image1d)
+    for r in _by_basis(self, imagemask):
+        yield r
+
+
+def _by_basis(self, imagemask):
+    '''part of group_by_bases, refactored'''
     basemask = np.ma.getmaskarray(self.psfbase1d)
 
     min_bases = getattr(self, "min_number_of_bases", 1)
@@ -114,24 +129,27 @@ def group_by_basis(self):
         if not imagemask[i] and ((~basemask[i, :]).sum() >= min_bases):
             D[tuple(basemask[i, :])].append(i)
 
-    return D.values()
+    return D.itervalues()
 
-def sectors(radius, phi, image_center=None):
+
+def sectors(self):
     '''Generate a function that generates sector regions
 
-    A pixel is included in a region, if its center falls within the boundaries.
+    A pixel is included in a region, if the pixel center falls within the
+    region boundaries.
 
-    Parameters
-    ----------
-    radius : np.array
+    This function makes use of the following fitter attributes, which have to
+    be set to use this function:
+
+    fitter.sector_radius : np.array
         boundaries for sector elements in pixels.
-    phi : int or `~astropy.quantity`
+    fitter.sector_phi : int or `~astropy.quantity`
         If this is an int it sets the number of sectors that make up a
         full circle.
         If this is an `astropy.quantity` it is interpreted as the
         boundaries of the angular bins. It should cover the range from
         0 to 2 pi (or 360 deg, if units is degrees).
-    image_center : tuple or None
+    fitter.sector_center : tuple or None
         x, y position of the center of all sectors (in pixel coordinates).
         ``None`` selects the center of the input image.
 
@@ -139,38 +157,45 @@ def sectors(radius, phi, image_center=None):
     -------
     regions : generator
         sector regions
-
-    Example
-    -------
-
-    >>> import numpy as np
-    >>> import astropy.units as u
-    >>> from psfsubtraction.fitpsftemplates.regions import sectors
-    >>> radius = np.array([0, 5, 10, 20, 50])
-    >>> phi = np.arange(0, 361., 60.) * u.deg
-    >>> regions_func = sectors(radius, phi)
     '''
+    try:
+        phi = self.sector_phi
+    except AttributeError:
+        raise OptionalAttributeError('Fitter must speficy the `self.sector_phi`')
     if np.isscalar(phi):
         phi = np.linspace(0, 2 * np.pi, int(phi) + 1) * u.radian
 
-    def sector_regions(self):
-        if image_center is None:
-            center = np.array(self.image.shape) / 2.
-        else:
-            center = image_center
-        indices = np.indices(self.image.shape)
-        x = indices[0, ...] - center[0]
-        y = indices[1, ...] - center[1]
-        r = np.sqrt(x**2 + y**2)
-        # express as complex number and then take angle
-        phiarr = np.angle(x + y * 1j)
-        # Now turn into astro.coordinates.Angle object
-        # because that has wrap_at and compares with astropy.quantities.
-        phiarr = Angle(phiarr * u.rad).wrap_at('360d')
+    try:
+        radius = self.sector_radius
+    except AttributeError:
+        raise OptionalAttributeError('Fitter must speficy the `self.sector_radius`')
 
-        for ri in range(len(radius) - 1):
-            for phii in range(len(phi) - 1 ):
-                yield (r >= radius[ri]) & (r < radius[ri + 1]) \
-                    & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
+    image_center = getattr(self, 'sector_center', None)
+    if image_center is None:
+        center = np.array(self.image.shape) / 2.
+    else:
+        center = image_center
+    indices = np.indices(self.image.shape)
+    x = indices[0, ...] - center[0]
+    y = indices[1, ...] - center[1]
+    r = np.sqrt(x**2 + y**2)
+    # express as complex number and then take angle
+    phiarr = np.angle(x + y * 1j)
+    # Now turn into astro.coordinates.Angle object
+    # because that has wrap_at and compares with astropy.quantities.
+    phiarr = Angle(phiarr * u.rad).wrap_at('360d')
 
-    return sector_regions
+    for ri in range(len(radius) - 1):
+        for phii in range(len(phi) - 1 ):
+            yield (r >= radius[ri]) & (r < radius[ri + 1]) \
+                & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
+
+
+def sectors_by_basis(self):
+    '''Combines `sectors` and `group_by_bases`.
+
+    The pixels in every sector will be grouped by their bases.
+    '''
+    for reg in sectors(self):
+        for r in _by_basis(self, ~self.anyreg_to_mask(reg)):
+            yield r

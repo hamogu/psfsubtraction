@@ -58,3 +58,6 @@ target/
 
 # Editor back-up
 *~
+
+# automatically generated version file
+psfsubtraction/version.py

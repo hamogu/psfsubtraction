@@ -1,9 +1,21 @@
+from warnings import warn
+
 import numpy as np
 
 import regions
 import findbase
 import fitregion
 import fitpsf
+
+
+class RegionError(Exception):
+    '''Region does not have the right shape or dtype'''
+    pass
+
+
+class PSFIndexError(Exception):
+    '''PSF Index array does not have the right shape or dtype'''
+    pass
 
 
 class BasePSFFitter(object):
@@ -61,6 +73,51 @@ class BasePSFFitter(object):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
+    ### Some wrapper around the above classes to unify output formats, check
+    ### validity etc.
+
+    def anyreg_to_mask(self, reg):
+        '''Convert any type of a region definition to a 1d boolean mask.
+
+        Also check that the region has the correct size.
+
+        Parameters
+        ----------
+        r : boolean mask of size image in 1d or 2d or 1d integer array
+        '''
+        r = np.asanyarray(reg)
+        # Index array like [1,5,12,23]
+        if (r.ndim == 1) and np.issubdtype(r.dtype, np.int64):
+            region = np.zeros((self.image1d.shape), dtype=bool)
+            region[r] = True
+            r = region
+        if r.ndim == 2:
+            r = r.ravel()
+        if r.shape != self.image1d.shape:
+            raise RegionError("Every region must have the same shape as the image.")
+        return r
+
+    def baseind_to_mask(self, indpsf):
+        '''Convert any type of psf base index to boolen mask.'''
+        indpsf = np.asanyarray(indpsf)
+        if (indpsf.ndim == 1) and np.issubdtype(indpsf.dtype, np.int64):
+            ind = np.zeros((self.psfbase.shape[2]), dype=bool)
+            ind[indpsf] = True
+            indpsf = ind
+        if indpsf.shape != (self.psfbase.shape[2], ):
+            raise PSFIndexError("PSF index shape does not match the shape of the psf base.")
+        return indpsf
+
+    def iter_regions(self):
+        '''Convert all allowed regions formats to a 1d boolean mask array'''
+        for r in self.regions():
+            reg = self.anyreg_to_mask(r)
+            if reg.sum() > 0:
+                yield reg
+            else:
+                warn('Skipping region that includes no pixels.')
+
+
     ### Here the actual work is done ###
 
     def fit_psf(self):
@@ -71,20 +128,22 @@ class BasePSFFitter(object):
         psf = np.ma.zeros(len(self.image1d))
 
         psf[:] = np.ma.masked
-        for region in self.regions():
+        for region in self.iter_regions():
             # select which bases to use
-            indpsf = self.findbase(region)
+            indpsf = self.baseind_to_mask(self.findbase(region))
             # Select which region to use in the optimization
-            fitregion = self.fitregion(region, indpsf)
+            fitregion = self.anyreg_to_mask(self.fitregion(region, indpsf))
+            # Perform fit on the fitregion
             psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
                                          self.psfbase1d[:, indpsf][fitregion, :])
+            # Use psfcoeff to estimate the psf in `region`
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
                                  psf_coeff)
         return self.dim1to2(psf)
 
     def remove_psf(self):
         psf = self.fit_psf()
-        return self.dim1to2(self.image1d - psf)
+        return self.dim1to2(self.image1d) - psf
 
 
 class SimpleSubtraction(BasePSFFitter):
@@ -104,3 +163,32 @@ class UseAllPixelsSubtraction(BasePSFFitter):
     findbase = findbase.nonmaskedbases
     fitregion = fitregion.all_unmasked
     fitpsfcoeff = fitpsf.psf_from_projection
+
+
+class LOCI(BasePSFFitter):
+    '''LOCI fitter (locally optimized combination of images
+
+    The loci algorithm was introduced in the following paper
+    `Lafreniere et al. 2007, ApJ, 660, 770 <http://adsabs.harvard.edu/abs/2007ApJ...660..770L>`_.
+
+    The default parameters in this fitter are chosen similar to the shape of
+    the regions used in that paper.
+    '''
+    regions = regions.sectors
+
+    @property
+    def sector_radius(self):
+        return np.logspace(0, np.log10(self.image.shape[1]), 10)
+
+    sector_phi = 12
+
+    findbase = findbase.nonmaskedbases
+
+    fitregion = fitregion.around_region
+    dilation_region = 5
+
+    fitpsfcoeff = fitpsf.psf_from_projection
+
+
+class LOCIAllPixelsSubtraction(LOCI):
+    regions = regions.sectors_by_basis
