@@ -49,3 +49,26 @@ def example40_40():
     image += 0.3 * np.random.rand(*image.shape)
 
     return image, psfarray
+
+@pytest.fixture()
+def example40_40_masked(example40_40):
+
+    image = example40_40[0]
+    psf = np.ma.array(example40_40[1])
+
+    # mask a couple of points
+    for i in range(10):
+        ind = np.random.choice(40, 2)
+        image[ind[0], ind[1]] = 1e5
+
+    image = np.ma.masked_greater(image, 1e4)
+
+    for i in range(10):
+        for j in range(3):
+            ind = np.random.choice(40, 2)
+            indj = np.random.choice(3)
+            psf[ind[0], ind[1], indj] = 1e5
+
+    psf = np.ma.masked_greater(psf, 1e4)
+
+    return image, psf

@@ -10,7 +10,7 @@ from ..utils import OptionalAttributeError, bool_indarray
 def test_image_at_once(example3_3):
     image, psfarray = example3_3
 
-    class psf(fitters.SimpleSubtraction):
+    class psf(fitters.BasePSFFitter):
         regions = regions.image_at_once
 
     f = psf(image, psfarray)
@@ -23,7 +23,7 @@ def test_image_at_once(example3_3):
 def test_image_unmasked(example3_3):
     image, psfarray = example3_3
 
-    class psf(fitters.SimpleSubtraction):
+    class psf(fitters.BasePSFFitter):
         regions = regions.image_unmasked
 
     # image with mask
@@ -43,7 +43,7 @@ def test_image_unmasked(example3_3):
 def test_group_by_basis(example3_3):
     image, psfarray = example3_3
 
-    class psf(fitters.SimpleSubtraction):
+    class psf(fitters.BasePSFFitter):
         regions = regions.group_by_basis
 
     f = psf(image, psfarray)
@@ -73,7 +73,7 @@ def test_sector_regions():
     for center in [(1, 7), None]:
         for r, phi in zip([np.arange(55), np.array([0, 1, 5, 55])],
                           [5, np.linspace(0., 360., 5.) * u.degree]):
-            class PSF(fitters.SimpleSubtraction):
+            class PSF(fitters.BasePSFFitter):
                 regions = regions.sectors
                 sector_radius = r
                 sector_phi = phi

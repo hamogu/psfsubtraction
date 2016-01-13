@@ -120,7 +120,7 @@ def around_region(self, region, indpsf):
 
 
 def wrapper_fitmask(func):
-    '''Use a function fit the fitregion with an additional global mask.
+    '''Wrap a fitregion function to apply an additional global mask.
 
     This function wraps the fitregion function ``func``. Fit regions are
     determined by that function, but are then additionally filtered
@@ -138,6 +138,11 @@ def wrapper_fitmask(func):
     ----------
     func : callable
         function to be wrapped.
+
+    Returns
+    -------
+    func_and_fitmask : function
+        wrapped ``func``
     '''
     def func_and_fitmask(self, region, indpsf):
         if not hasattr(self, "fitmask"):
@@ -156,3 +161,34 @@ def wrapper_fitmask(func):
             return fitregion_and_fitmask
 
     return func_and_fitmask
+
+def wrapper_ignore_all_masked(func):
+    '''Wrap a fitregion function to remove all masked pixels from fitregion.
+
+    This function wraps the fitregion function ``func``. Fit regions are
+    determined by that function, but are then additionally filtered
+    such that points that are masked in either the image or and used psfbase
+    are not part of the returned ``fitregion``.
+
+    Parameters
+    ----------
+    func : callable
+        function to be wrapped.
+
+    Returns
+    -------
+    func_and_fitmask : function
+        wrapped ``func``
+    '''
+    def func_unmasked(self, region, indpsf):
+        fitregion = self.anyreg_to_mask(func(self, region, indpsf))
+
+        psfmask = np.max(np.ma.getmaskarray(self.psfbase1d[:, indpsf]), axis=1)
+        datamask = np.ma.getmaskarray(self.image1d)
+        fitregion = fitregion & ~psfmask & ~datamask
+
+        if fitregion.sum() <= np.asarray(indpsf).sum():
+            warn('Fit underdetermined. Choose larger fit region or smaller base.')
+        return fitregion
+
+    return func_unmasked

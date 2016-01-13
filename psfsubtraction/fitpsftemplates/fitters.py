@@ -29,11 +29,25 @@ class BasePSFFitter(object):
         array of psfbases. (n, m) are the dimensions of each image
         and there are k potential elements of the PSF base.
     '''
+
+    '''Regions with fewer than ``min_pixels_in_region`` will be ignored for speed-up.'''
+    min_pixels_in_region = 1
+
+    '''Can this fitter deal with masked data?
+
+    This attribute is not fool-proof; it is set by hand for the pre-defined fitters.
+    If you define your own fitter, you will ahve to check yourself if if works with
+    masked data.'''
+    _allow_masked_data = True
+
     def __init__(self, image, psfbase):
         if image.shape != psfbase.shape[:2]:
             raise ValueError('Each PSF must have same dimension as image.')
         if len(psfbase.shape) != 3:
             raise ValueError('psfbase must have 3 dim [im_x, im_y, n]')
+        if not self._allow_masked_data and \
+           (np.ma.getmask(image).sum() > 0 or np.ma.getmask(psfbase).sum() > 0):
+            raise ValueError('This fitter cannot deal with masked data.')
         self.image = image
         self.psfbase = psfbase
 
@@ -112,7 +126,7 @@ class BasePSFFitter(object):
         '''Convert all allowed regions formats to a 1d boolean mask array'''
         for r in self.regions():
             reg = self.anyreg_to_mask(r)
-            if reg.sum() > 0:
+            if reg.sum() >= self.min_pixels_in_region:
                 yield reg
             else:
                 warn('Skipping region that includes no pixels.')
@@ -129,13 +143,20 @@ class BasePSFFitter(object):
 
         psf[:] = np.ma.masked
         for region in self.iter_regions():
+
             # select which bases to use
             indpsf = self.baseind_to_mask(self.findbase(region))
+
             # Select which region to use in the optimization
             fitregion = self.anyreg_to_mask(self.fitregion(region, indpsf))
+
+            # Check for consistency
+            self.check_fittable(region, fitregion, indpsf)
+
             # Perform fit on the fitregion
             psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
                                          self.psfbase1d[:, indpsf][fitregion, :])
+
             # Use psfcoeff to estimate the psf in `region`
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
                                  psf_coeff)
@@ -144,6 +165,12 @@ class BasePSFFitter(object):
     def remove_psf(self):
         psf = self.fit_psf()
         return self.dim1to2(self.image1d) - psf
+
+    def check_fittable(self, region, fitregion, indpsf):
+        n_data = (fitregion & ~np.ma.getmaskarray(self.image1d)).sum()
+        n_pars = indpsf.sum()
+        if n_data.sum() <= n_pars.sum():
+            raise RegionError('Fit region contains only {0} data points to fit {1} coefficients.'.format(n_data.sum(), n_pars.sum()))
 
 
 class SimpleSubtraction(BasePSFFitter):
@@ -154,11 +181,17 @@ class SimpleSubtraction(BasePSFFitter):
     '''
     regions = regions.image_unmasked
     findbase = findbase.allbases
-    fitregion = fitregion.identity
+    fitregion = fitregion.all_unmasked
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
 class UseAllPixelsSubtraction(BasePSFFitter):
+    '''Use all available pixels of the image.
+
+    For unmasked image pixel the maximal set of PSF templates that are
+    unmasked at that position is used.
+    Pixels are then group in regions that make use of the same PSF templates.
+    '''
     regions = regions.group_by_basis
     findbase = findbase.nonmaskedbases
     fitregion = fitregion.all_unmasked
@@ -166,7 +199,7 @@ class UseAllPixelsSubtraction(BasePSFFitter):
 
 
 class LOCI(BasePSFFitter):
-    '''LOCI fitter (locally optimized combination of images
+    '''LOCI fitter (locally optimized combination of images)
 
     The loci algorithm was introduced in the following paper
     `Lafreniere et al. 2007, ApJ, 660, 770 <http://adsabs.harvard.edu/abs/2007ApJ...660..770L>`_.
@@ -174,21 +207,42 @@ class LOCI(BasePSFFitter):
     The default parameters in this fitter are chosen similar to the shape of
     the regions used in that paper.
     '''
+
+    '''Can this fitter deal with masked data?
+
+    No, in this case, because it is possible that sectors defines a region
+    where no unmasked bases exist.'''
+    _allow_masked_data = False
+
     regions = regions.sectors
 
     @property
     def sector_radius(self):
-        return np.logspace(0, np.log10(self.image.shape[1]), 10)
+        return np.logspace(self.sector_radius_inner,
+                           np.log10(self.image.shape[1]),
+                           self.sector_radius_n)
 
+    sector_radius_inner = 0
+    sector_radius_n = 10
     sector_phi = 12
 
     findbase = findbase.nonmaskedbases
 
-    fitregion = fitregion.around_region
-    dilation_region = 5
+    fitregion = fitregion.wrapper_ignore_all_masked(fitregion.around_region)
+    dilation_region = 10
 
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
 class LOCIAllPixelsSubtraction(LOCI):
+    '''LOCI fitter that splits LOCI regions according to the available PSF bases.
+
+    For unmasked image pixel the maximal set of PSF templates that are
+    unmasked at that position is used.
+    Pixels are then group in regions that make use of the same PSF templates.
+    '''
+
+    '''Can this fitter deal with masked data?'''
+    _allow_masked_data = True
+
     regions = regions.sectors_by_basis

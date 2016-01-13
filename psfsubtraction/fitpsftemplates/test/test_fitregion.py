@@ -8,14 +8,17 @@ from ..utils import OptionalAttributeError
 
 def test_identity(example3_3):
     image, psfarray = example3_3
-    f = fitters.SimpleSubtraction(image, psfarray)
+    class PSF(fitters.BasePSFFitter):
+        fitregion = fitregion.identity
+
+    f = PSF(image, psfarray)
     assert np.all(f.fitregion(~image.mask.flatten(), [True, True]) == ~image.mask.flatten())
     assert np.all(f.fitregion(~image.mask.flatten(), [False, True])== ~image.mask.flatten())
 
 
 def test_unmasked(example3_3):
     image, psfarray = example3_3
-    class psf(fitters.SimpleSubtraction):
+    class psf(fitters.BasePSFFitter):
         fitregion = fitregion.all_unmasked
 
     f = psf(image, psfarray)
@@ -33,7 +36,7 @@ def test_unmasked(example3_3):
 def test_wrapper_fitmask(example3_3):
     image, psfarray = example3_3
 
-    class psf(fitters.SimpleSubtraction):
+    class psf(fitters.BasePSFFitter):
         fitregion = fitregion.wrapper_fitmask(fitregion.all_unmasked)
 
         fitmask = np.array([[True, True, False],
@@ -60,7 +63,7 @@ def test_dilated_region_int(example3_3):
                        [False, False, False],
                        [False, False, False]])
 
-    class DilationFitter(fitters.SimpleSubtraction):
+    class DilationFitter(fitters.BasePSFFitter):
         fitregion = fitregion.dilated_region
         dilation_region = 1
 
@@ -79,7 +82,7 @@ def test_dilated_region_array(example3_3):
                        [False, False, False],
                        [False, False, False]])
 
-    class DilationFitter(fitters.SimpleSubtraction):
+    class DilationFitter(fitters.BasePSFFitter):
         fitregion = fitregion.dilated_region
         dilation_region = np.array([[False, True, False],
                                     [True, True, True],
@@ -100,7 +103,7 @@ def test_region_around_array(example3_3):
                        [False, False, False],
                        [False, False, False]])
 
-    class DilationFitter(fitters.SimpleSubtraction):
+    class DilationFitter(fitters.BasePSFFitter):
         fitregion = fitregion.around_region
         dilation_region = np.array([[False, True, False],
                                     [True, True, True],
