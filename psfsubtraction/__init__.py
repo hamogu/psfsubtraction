@@ -12,4 +12,4 @@ from ._astropy_init import *
 
 # For egg_info test builds to pass, put package imports here.
 if not _ASTROPY_SETUP_:
-    from psfsubtraction import *
+    from psfsubtraction import fitters, regions, optregion, findbase, fitpsf, prepare
