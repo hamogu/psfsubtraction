@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 """
 This bootstrap module contains code for ensuring that the astropy_helpers
 package will be importable by the time the setup.py script runs.  It also

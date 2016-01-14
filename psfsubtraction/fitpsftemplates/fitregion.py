@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 '''Function to construct the "fit region" for a region.
 
 The "fit region" is the region used in the fitting to find the best PSF for a

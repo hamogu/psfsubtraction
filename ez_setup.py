@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 #!python
 """Bootstrap setuptools installation
 

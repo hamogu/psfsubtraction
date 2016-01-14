@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 import numpy as np
 from scipy.stats import multivariate_normal
 import pytest

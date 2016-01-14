@@ -1,4 +1,4 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Licensed under a MIT licence - see file `license`
 
 """
 This is an Astropy affiliated package.

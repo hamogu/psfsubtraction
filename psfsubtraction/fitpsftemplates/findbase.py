@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 '''Functions to select that bases used in a PSF fit.
 
 These functions meant to be included into a `PSFFitter` object and this they

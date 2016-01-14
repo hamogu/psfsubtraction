@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 

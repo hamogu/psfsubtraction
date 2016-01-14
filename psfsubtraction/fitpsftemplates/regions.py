@@ -1,3 +1,4 @@
+# Licensed under a MIT licence - see file `license`
 '''Functions that construct an iterable to iterate over regions.
 
 These functions meant to be included into a `PSFFitter` object and thus they
