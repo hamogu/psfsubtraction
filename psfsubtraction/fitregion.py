@@ -66,8 +66,8 @@ def dilated_region(self, region, indpsf):
     Example
     -------
 
-    >>> from psfsubtraction.fitpsftemplates import fitters
-    >>> from psfsubtraction.fitpsftemplates import fitregion
+    >>> from psfsubtraction import fitters
+    >>> from psfsubtraction import fitregion
     >>> region = np.array([[True, False, False], \
                            [False, False, False], \
                            [False, False, False]])
@@ -100,8 +100,8 @@ def around_region(self, region, indpsf):
     Example
     -------
 
-    >>> from psfsubtraction.fitpsftemplates import fitters
-    >>> from psfsubtraction.fitpsftemplates import fitregion
+    >>> from psfsubtraction import fitters
+    >>> from psfsubtraction import fitregion
     >>> region = np.array([[True, False, False], \
                            [False, False, False], \
                            [False, False, False]])
