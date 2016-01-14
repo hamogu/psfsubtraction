@@ -5,7 +5,7 @@ import numpy as np
 
 import regions
 import findbase
-import fitregion
+import optregion
 import fitpsf
 
 
@@ -80,7 +80,7 @@ class BasePSFFitter(object):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
-    def fitregion(self, region, indpsf):
+    def optregion(self, region, indpsf):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
@@ -149,14 +149,14 @@ class BasePSFFitter(object):
             indpsf = self.baseind_to_mask(self.findbase(region))
 
             # Select which region to use in the optimization
-            fitregion = self.anyreg_to_mask(self.fitregion(region, indpsf))
+            optregion = self.anyreg_to_mask(self.optregion(region, indpsf))
 
             # Check for consistency
-            self.check_fittable(region, fitregion, indpsf)
+            self.check_fittable(region, optregion, indpsf)
 
-            # Perform fit on the fitregion
-            psf_coeff = self.fitpsfcoeff(self.image1d[fitregion],
-                                         self.psfbase1d[:, indpsf][fitregion, :])
+            # Perform fit on the optregion
+            psf_coeff = self.fitpsfcoeff(self.image1d[optregion],
+                                         self.psfbase1d[:, indpsf][optregion, :])
 
             # Use psfcoeff to estimate the psf in `region`
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
@@ -167,8 +167,8 @@ class BasePSFFitter(object):
         psf = self.fit_psf()
         return self.dim1to2(self.image1d) - psf
 
-    def check_fittable(self, region, fitregion, indpsf):
-        n_data = (fitregion & ~np.ma.getmaskarray(self.image1d)).sum()
+    def check_fittable(self, region, optregion, indpsf):
+        n_data = (optregion & ~np.ma.getmaskarray(self.image1d)).sum()
         n_pars = indpsf.sum()
         if n_data.sum() <= n_pars.sum():
             raise RegionError('Fit region contains only {0} data points to fit {1} coefficients.'.format(n_data.sum(), n_pars.sum()))
@@ -182,7 +182,7 @@ class SimpleSubtraction(BasePSFFitter):
     '''
     regions = regions.image_unmasked
     findbase = findbase.allbases
-    fitregion = fitregion.all_unmasked
+    optregion = optregion.all_unmasked
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
@@ -195,7 +195,7 @@ class UseAllPixelsSubtraction(BasePSFFitter):
     '''
     regions = regions.group_by_basis
     findbase = findbase.nonmaskedbases
-    fitregion = fitregion.all_unmasked
+    optregion = optregion.all_unmasked
     fitpsfcoeff = fitpsf.psf_from_projection
 
 
@@ -229,7 +229,7 @@ class LOCI(BasePSFFitter):
 
     findbase = findbase.nonmaskedbases
 
-    fitregion = fitregion.wrapper_ignore_all_masked(fitregion.around_region)
+    optregion = optregion.wrapper_ignore_all_masked(optregion.around_region)
     dilation_region = 10
 
     fitpsfcoeff = fitpsf.psf_from_projection

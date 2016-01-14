@@ -8,7 +8,7 @@ class OptionalAttributeError(Exception):
     ``image``, ``image1d``, ``psfbase``, and ``psfbase1d`` are defined.
     These other attributes are *optional* in the sense that most fitter
     objects will not need them, but they might be *required* for e.g.
-    certain ``fitregion`` functions.
+    certain ``optregion`` functions.
     '''
     pass
 
