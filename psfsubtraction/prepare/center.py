@@ -5,19 +5,37 @@ from scipy import ndimage, stats
 from skimage import filters as skfilter
 from skimage.morphology import convex_hull_image
 
+__all__ = ['fit_diffraction_spike', 'center_from_spikes']
 
 def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
     '''fit a diffraction spike with a line
 
-    The fit is done on the left side of the image from ``-r_outer`` to
-    ``-r_inner`` and on the right side from ``+r_inner`` to ``+r_outer``
-    (all coordinates in pixels, measured from the center of the image).
-    ``fac`` is an initial guess for the parameter m in the equation y = m*x+b.
-    For each column in the image, a ``width`` strip of pixels centered on the
-    initial guess is extracted and the position of the maximum is recorded.
     Regions with low signal, i.e. regions where the maximum is not well
     determined (standard deviation < 40% percentile indicates that all pixels
-    in that strip are very similar -> there is not signal).
+    in that strip are very similar, meaning that these pixels contain mostly
+    sky and not signal).
+
+
+    Parameters
+    ----------
+    image : np.array
+        2 dimensional image
+    fac : float
+        Initial guess for the parameter m in the equation y = m*x+b.
+    r_inner, r_outer : float
+        The fit is done on the left side of the image from ``-r_outer`` to
+        ``-r_inner`` and on the right side from ``+r_inner`` to ``+r_outer``
+        (all coordinates in pixels, measured from the center of the image).
+        Use these parameters to contrain the fit to a region with a strong, but
+        not saturated signal.
+    width : float
+        For each column in the image, a ``width`` strip of pixels centered on the
+        initial guess is extracted and the position of the maximum is recorded.
+
+    Returns
+    -------
+    m, b : float
+        coefficients for a line of the form y = m x + b
     '''
     xm, ym = ndimage.center_of_mass(image)
     s = np.hstack([np.arange(-r_outer, -r_inner), np.arange(r_inner, r_outer)])
@@ -43,7 +61,19 @@ def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
 
 
 def center_from_spikes(image, **kwargs):
-    '''Fit both diffraction spikes and return the intersection point'''
+    '''Fit both diffraction spikes and return the intersection point
+
+    .. note:: Direction of diffraction spikes.
+
+       Currently this function assumes X shaped diffraction spikes.
+
+    Parameters
+    ----------
+    image : np.array
+        2 dimensional image
+
+    All keyword arguments will be passed to `fit_diffraction_spike`.
+    '''
     m1, b1 = fit_diffraction_spike(image, 1., **kwargs)
     m2, b2 = fit_diffraction_spike(image, -1., **kwargs)
 
@@ -77,7 +107,7 @@ def mask_spikes(image, m1, m2, maskwidth=3, **kwargs):
 
 
 def mask_readoutstreaks(image):
-    # logarithmic image to edge detect faint features
+    '''logarithmic image to edge detect faint features'''
     logimage = np.log10(np.clip(image, 1, 1e5)) / 5
     # Mask overexposed area + sobel edge detect
     mask = (skfilter.sobel(logimage) > 0.1) | (image > 0.6 * np.max(image))
