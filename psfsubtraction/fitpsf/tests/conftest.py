@@ -30,7 +30,7 @@ def example3_3():
                              [False, False, True]]
                        )
     psfarray = np.ma.dstack((psf1, psf2))
-    return image, psfarray
+    return psfarray, image
 
 
 @pytest.fixture()
@@ -49,13 +49,13 @@ def example40_40():
     np.random.seed(0)
     image += 0.3 * np.random.rand(*image.shape)
 
-    return image, psfarray
+    return psfarray, image
 
 @pytest.fixture()
 def example40_40_masked(example40_40):
 
-    image = example40_40[0]
-    psf = np.ma.array(example40_40[1])
+    image = example40_40[1]
+    psf = np.ma.array(example40_40[0])
 
     # mask a couple of points
     for i in range(10):
@@ -72,4 +72,4 @@ def example40_40_masked(example40_40):
 
     psf = np.ma.masked_greater(psf, 1e4)
 
-    return image, psf
+    return psf, image

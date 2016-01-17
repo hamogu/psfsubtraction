@@ -30,9 +30,9 @@ def test_fitters_are_functinoal(example40_40, myfitter):
     # We want to check that at least 90 % of the pixels are subtracted well.
     # Detailed testing for individual algorithms is beyond this function.
 
-    n = example40_40[0].size
-    assert (np.abs(residual_im) < 0.2 * example40_40[0]).sum() > 0.9 * n
-    assert (np.isclose(psf, example40_40[0], 0.2, 0.05)).sum() > 0.9 * n
+    n = example40_40[1].size
+    assert (np.abs(residual_im) < 0.2 * example40_40[1]).sum() > 0.9 * n
+    assert (np.isclose(psf, example40_40[1], 0.2, 0.05)).sum() > 0.9 * n
 
 @pytest.fixture(params=[fitters.SimpleSubtraction,
                         fitters.UseAllPixelsSubtraction,
@@ -54,8 +54,8 @@ def test_fitters_are_functinoal_masked(example40_40_masked, myfitter_masked):
 
     residual_im = myfitter_masked.remove_psf()
 
-    image = example40_40_masked[0]
-    psfs = example40_40_masked[1]
+    psfs = example40_40_masked[0]
+    image = example40_40_masked[1]
 
     # There could always be a few pixels where the errors are bigger.
     # We want to check that at least 90 % of the pixels are subtracted well.
@@ -83,16 +83,16 @@ def test_error_on_masked():
     mpsf = np.ma.array(psf)
 
     # masked array with no mask set works
-    f = PSF(mimage, mpsf)
+    f = PSF(mpsf, mimage)
 
     # but if mask is set it raises an exception
     mimage[2, 2] = np.ma.masked
     mpsf[1, 3, 1] = np.ma.masked
 
     with pytest.raises(ValueError) as e:
-        f = PSF(mimage, psf)
+        f = PSF(psf, mimage)
     assert 'cannot deal with masked' in str(e)
 
     with pytest.raises(ValueError) as e:
-        f = PSF(image, mpsf)
+        f = PSF(mpsf, image)
     assert 'cannot deal with masked' in str(e)

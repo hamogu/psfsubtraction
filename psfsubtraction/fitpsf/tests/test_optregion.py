@@ -8,21 +8,21 @@ from ..utils import OptionalAttributeError
 
 
 def test_identity(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
     class PSF(fitters.BasePSFFitter):
         optregion = optregion.identity
 
-    f = PSF(image, psfarray)
+    f = PSF(psfarray, image)
     assert np.all(f.optregion(~image.mask.flatten(), [True, True]) == ~image.mask.flatten())
     assert np.all(f.optregion(~image.mask.flatten(), [False, True])== ~image.mask.flatten())
 
 
 def test_unmasked(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
     class psf(fitters.BasePSFFitter):
         optregion = optregion.all_unmasked
 
-    f = psf(image, psfarray)
+    f = psf(psfarray, image)
 
     reg1 = np.array([[True, True, False],
                      [True, True, False],
@@ -35,7 +35,7 @@ def test_unmasked(example3_3):
 
 
 def test_wrapper_fitmask(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     class psf(fitters.BasePSFFitter):
         optregion = optregion.wrapper_fitmask(optregion.all_unmasked)
@@ -44,7 +44,7 @@ def test_wrapper_fitmask(example3_3):
                             [False, False, False],
                             [False, False, False]])
 
-    f = psf(image, psfarray)
+    f = psf(psfarray, image)
     reg1 = np.array([[False, False, False],
                      [True, True, False],
                      [True, False, False]])
@@ -58,7 +58,7 @@ def test_wrapper_fitmask(example3_3):
 
 
 def test_dilated_region_int(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     region = np.array([[True, False, False],
                        [False, False, False],
@@ -68,7 +68,7 @@ def test_dilated_region_int(example3_3):
         optregion = optregion.dilated_region
         dilation_region = 1
 
-    myfitter = DilationFitter(image, psfarray)
+    myfitter = DilationFitter(psfarray, image)
     fitreg = myfitter.optregion(region, [0])
     expected = np.array([[True, True, False],
                          [True, True, False],
@@ -77,7 +77,7 @@ def test_dilated_region_int(example3_3):
 
 
 def test_dilated_region_array(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     region = np.array([[True, False, False],
                        [False, False, False],
@@ -89,7 +89,7 @@ def test_dilated_region_array(example3_3):
                                     [True, True, True],
                                     [False, True, False]])
 
-    myfitter = DilationFitter(image, psfarray)
+    myfitter = DilationFitter(psfarray, image)
     fitreg = myfitter.optregion(region, [0])
     expected = np.array([[True, True, False],
                          [True, False, False],
@@ -98,7 +98,7 @@ def test_dilated_region_array(example3_3):
 
 
 def test_region_around_array(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     region = np.array([[True, False, False],
                        [False, False, False],
@@ -110,7 +110,7 @@ def test_region_around_array(example3_3):
                                     [True, True, True],
                                     [False, True, False]])
 
-    myfitter = DilationFitter(image, psfarray)
+    myfitter = DilationFitter(psfarray, image)
     fitreg = myfitter.optregion(region.ravel(), [0])
     expected = np.array([[False, True, False],
                          [True, False, False],

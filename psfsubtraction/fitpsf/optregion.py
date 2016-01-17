@@ -76,7 +76,7 @@ def dilated_region(self, region, indpsf):
     ...     dilation_region = 1
     >>> dummy_image = np.ones((3, 3)) # boring image, but good enough for the example
     >>> dummy_psfs = np.ones((3,3,4)) # even more boring psf array.
-    >>> myfitter = DilationFitter(dummy_image, dummy_psfs)
+    >>> myfitter = DilationFitter(dummy_psfs, dummy_image)
     >>> myfitter.optregion(region, [0]).reshape((3, 3))
     array([[ True,  True, False],
            [ True,  True, False],
@@ -110,7 +110,7 @@ def around_region(self, region, indpsf):
     >>> class AroundFitter(fitters.SimpleSubtraction):
     ...     optregion = optregion.around_region
     ...     dilation_region = 1
-    >>> myfitter = AroundFitter(dummy_image, dummy_psfs)
+    >>> myfitter = AroundFitter(dummy_psfs, dummy_image)
     >>> myfitter.optregion(region.ravel(), [0]).reshape((3, 3))
     array([[False,  True, False],
            [ True,  True, False],

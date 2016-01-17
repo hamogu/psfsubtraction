@@ -41,12 +41,11 @@ For the examples below, we will generate some artifical data here (TODO: bundle 
   >>> image += 0.1 * multivariate_normal([0, 0.05], [[0.2, 0.], [0., 0.05]]).pdf(pos)
   >>> image2 =  2. * psf1 + 2.3 * psf2 + 2.6 * psf3
   >>> image2 += 0.3 * np.random.rand(*image.shape)
-  >>> images = np.dstack([image, image2])
 
 We can now instanciate a fitter object and use it to remove the PSF from ``image``, looking for what's left::
 
   >>> from psfsubtraction.fitpsf import fitters
-  >>> my_fitter = fitters.SimpleSubtraction(image, psfbase)
+  >>> my_fitter = fitters.SimpleSubtraction(psfbase, image)
   >>> residual = my_fitter.remove_psf()
 
 Let's now compare the initial image and the PSF subtracted image (note the different scales on both images):
@@ -69,7 +68,7 @@ Let's now compare the initial image and the PSF subtracted image (note the diffe
   # Add a faint companion
   image += 0.1 * multivariate_normal([0, 0.3], [[0.05, 0.], [0., 0.05]]).pdf(pos)
   from psfsubtraction.fitpsf import fitters
-  my_fitter = fitters.SimpleSubtraction(image, psfbase)
+  my_fitter = fitters.SimpleSubtraction(psfbase, image)
   residual = my_fitter.remove_psf()
 
   import matplotlib.pylab as plt
@@ -93,12 +92,12 @@ Two ways to fit several images to the same base
 
 The first paradigm is to make a single fitter object which is given the psf base upon initialization and to set all required parameters on this object. We can then loop over this one object::
 
-  >>> my_fitter = fitters.LOCI(psfbase)   # doctest: +SKIP
-  >>> my_fitter.sector_radius_n = 5   # doctest: +SKIP
-  >>> my_fitter.sector_phi = np.linspace(0.1, 6.1, 10) # not quite 2 pi.   # doctest: +SKIP 
-  >>> subtracted = []   # doctest: +SKIP
-  >>> for im in images:   # doctest: +SKIP
-  ...     subtracted.append(my_fitter.remove_psf(im)))   # doctest: +SKIP
+  >>> my_fitter = fitters.LOCI(psfbase)
+  >>> my_fitter.sector_radius_n = 5
+  >>> my_fitter.sector_phi = 12
+  >>> subtracted = []
+  >>> for im in [image, image2]:
+  ...     subtracted.append(my_fitter.remove_psf(im))
 
 Alternatively, we can make a class that encapsualtes all the properties that we need and make a new fitter objects for each image. This requires a little more memory, but it makes each fit entirely independend and thus the whole process is easily paralizable. On the flipside, we have to write a little more code to to the same thing:
 
@@ -111,8 +110,8 @@ Alternatively, we can make a class that encapsualtes all the properties that we 
   >>> # Prepare for the fit
   >>> class MyFitter(fitters.LOCI):
   ...     sector_radius_n = 5
-  ...     sector_phi =  np.linspace(0.1, 6.1, 10) # not quite 2 pi.
-  >>> fitterlist = [MyFitter(psfbase, im) for im in images]
+  ...     sector_phi = 12
+  >>> fitterlist = [MyFitter(psfbase, im) for im in [image, image2]]
   >>> # Do the fit
   >>> subtracted = dview.map_sync(lambda x: x.remove_psf, fitterlist)
   

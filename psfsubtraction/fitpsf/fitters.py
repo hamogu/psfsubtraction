@@ -24,11 +24,11 @@ class BasePSFFitter(object):
 
     Parameters
     ----------
-    image : np.array of shape (n,m)
-        N, M array
     psfbase : np.ndarray of shape (n, m, k)
         array of psfbases. (n, m) are the dimensions of each image
         and there are k potential elements of the PSF base.
+    image : np.array of shape (n,m) or None
+        N, M array. If ``None``, the image has to be set later.
     '''
 
     '''Regions with fewer than ``min_pixels_in_region`` will be ignored for speed-up.'''
@@ -41,26 +41,63 @@ class BasePSFFitter(object):
     masked data.'''
     _allow_masked_data = True
 
-    def __init__(self, image, psfbase):
-        if image.shape != psfbase.shape[:2]:
-            raise ValueError('Each PSF must have same dimension as image.')
+    _image = None
+    _psf = None
+
+    def __init__(self, psfbase, image=None):
         if len(psfbase.shape) != 3:
             raise ValueError('psfbase must have 3 dim [im_x, im_y, n]')
-        if not self._allow_masked_data and \
-           (np.ma.getmask(image).sum() > 0 or np.ma.getmask(psfbase).sum() > 0):
+        if not self._allow_masked_data and (np.ma.getmask(psfbase).sum() > 0):
             raise ValueError('This fitter cannot deal with masked data.')
-        self.image = image
+
         self.psfbase = psfbase
+        self.image = image
 
     ### Convenience functions and infrastructure ###
+    @property
+    def image_dim(self):
+        '''Dimenension of the image that this fitter works on.'''
+        return self.psfbase.shape[:2]
+
+    @property
+    def image(self):
+        '''Image.
+
+        np.array of shape (n, m) or None (if not set yet).
+        '''
+        if self._image is None:
+            raise AttributeError('image not set yet.')
+        else:
+            return self._image
+
+    @image.setter
+    def image(self, im):
+        if im is None:
+            self._image = im
+        else:
+            if im.shape != self.image_dim:
+                raise ValueError('PSF base is set for images of size ({0}, {1})'.format(self.image_dim[0], self.image_dim[1]))
+            if not self._allow_masked_data and (np.ma.getmask(im).sum() > 0):
+                raise ValueError('This fitter cannot deal with masked data.')
+            self._image = im
+            self._psf = None
 
     @property
     def image1d(self):
+        '''Image flatted to a 1 d vector.'''
         return self.dim2to1(self.image)
 
     @property
     def psfbase1d(self):
+        '''PSF base flattened to an 2d array (stack of 1d images)'''
         return self.psfbase.reshape((-1, self.psfbase.shape[2]))
+
+    @property
+    def psf(self):
+        '''Fitted Point-Spread-Function (PSF)'''
+        if self._psf is None:
+            self._psf = self.fit_psf()
+        return self._psf
 
     def dim2to1(self, array2d):
         '''Flatten image'''
@@ -68,7 +105,7 @@ class BasePSFFitter(object):
 
     def dim1to2(self, array1d):
         '''Reshape flattened image to 2 d.'''
-        return array1d.reshape(self.image.shape)
+        return array1d.reshape(self.image_dim)
 
     ### Functions that should be overwritten by child classes ###
 
@@ -98,17 +135,17 @@ class BasePSFFitter(object):
 
         Parameters
         ----------
-        r : boolean mask of size image in 1d or 2d or 1d integer array
+        reg : boolean mask of size image in 1d or 2d or 1d integer array
         '''
         r = np.asanyarray(reg)
         # Index array like [1,5,12,23]
         if (r.ndim == 1) and np.issubdtype(r.dtype, np.int64):
-            region = np.zeros((self.image1d.shape), dtype=bool)
+            region = np.zeros((self.image_dim[0] * self.image_dim[1]), dtype=bool)
             region[r] = True
             r = region
         if r.ndim == 2:
             r = r.ravel()
-        if r.shape != self.image1d.shape:
+        if r.shape != (self.image_dim[0] * self.image_dim[1], ):
             raise RegionError("Every region must have the same shape as the image.")
         return r
 
@@ -124,7 +161,7 @@ class BasePSFFitter(object):
         return indpsf
 
     def iter_regions(self):
-        '''Convert all allowed regions formats to a 1d boolean mask array'''
+        '''Convert regions to 1d boolean mask array and iterate'''
         for r in self.regions():
             reg = self.anyreg_to_mask(r)
             if reg.sum() >= self.min_pixels_in_region:
@@ -135,7 +172,21 @@ class BasePSFFitter(object):
 
     ### Here the actual work is done ###
 
-    def fit_psf(self):
+    def fit_psf(self, image=None):
+        '''Fit the PSF for an image
+
+        Parameters
+        ----------
+        image : np.array of shape (n, m) or None
+            N, M array. If ``None``, use the image set previously.
+
+        Returns
+        -------
+        psf : np.array of shape (n, m)
+            Fitted PSF.
+        '''
+        if image is not None:
+            self.image = image
         # This line triggers in bug in numpy < 1.9
         # psf = np.zeros_like(self.image1d)
         # It results in psf.mask is self.image1d.mask
@@ -161,11 +212,25 @@ class BasePSFFitter(object):
             # Use psfcoeff to estimate the psf in `region`
             psf[region] = np.dot(self.psfbase1d[:, indpsf][region, :],
                                  psf_coeff)
+        self._psf = self.dim1to2(psf)
         return self.dim1to2(psf)
 
-    def remove_psf(self):
-        psf = self.fit_psf()
-        return self.dim1to2(self.image1d) - psf
+    def remove_psf(self, image=None):
+        '''Remove te PSF from the image.
+
+        Parameters
+        ----------
+        image : np.array of shape (n, m) or None
+            N, M array. If ``None``, use the image set previously.
+
+        Returns
+        -------
+        resid : np.array of shape (n, m)
+            original image with PSF subtracted.
+        '''
+        if image is not None:
+            self.image = image
+        return self.image - self.psf
 
     def check_fittable(self, region, optregion, indpsf):
         n_data = (optregion & ~np.ma.getmaskarray(self.image1d)).sum()

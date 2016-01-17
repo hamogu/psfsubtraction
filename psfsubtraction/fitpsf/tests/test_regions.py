@@ -9,12 +9,12 @@ from ..utils import OptionalAttributeError, bool_indarray
 
 
 def test_image_at_once(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     class psf(fitters.BasePSFFitter):
         regions = regions.image_at_once
 
-    f = psf(image, psfarray)
+    f = psf(psfarray, image)
     regs = f.regions()
     assert len(list(regs)) == 1
     assert regs[0].shape == (9, )
@@ -22,19 +22,19 @@ def test_image_at_once(example3_3):
 
 
 def test_image_unmasked(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     class psf(fitters.BasePSFFitter):
         regions = regions.image_unmasked
 
     # image with mask
-    f = psf(image, psfarray)
+    f = psf(psfarray, image)
     regs = list(f.regions())
     assert len(regs) == 1
     assert np.all(regs[0] == ~image.mask.flatten())
 
     # image without mask
-    f = psf(np.ones((3, 3)), psfarray)
+    f = psf(psfarray, np.ones((3, 3)))
     regs = list(f.regions())
     assert len(regs) == 1
     assert regs[0].shape == (9, )
@@ -42,12 +42,12 @@ def test_image_unmasked(example3_3):
 
 
 def test_group_by_basis(example3_3):
-    image, psfarray = example3_3
+    psfarray, image = example3_3
 
     class psf(fitters.BasePSFFitter):
         regions = regions.group_by_basis
 
-    f = psf(image, psfarray)
+    f = psf(psfarray, image)
     regs = list(f.regions())
     assert len(regs) == 3
     # order is given by implementation, but does not matter at all.
@@ -80,7 +80,7 @@ def test_sector_regions():
                 sector_phi = phi
                 sector_center = center
 
-            f = PSF(im, psfs)
+            f = PSF(psfs, im)
             regs = np.dstack(list(f.regions()))
             regs = regs.reshape((1200, -1))
             # Test that each pixel is part of one and only one region
@@ -90,7 +90,7 @@ def test_sector_regions():
         class PSF2(PSF):
             sector_radius = [5, 10, 50]
 
-        f = PSF2(im, psfs)
+        f = PSF2(psfs, im)
         regs = np.dstack(list(f.regions()))
         regs = regs.reshape((1200, -1))
         # Test that each pixel is part of one and only one region
