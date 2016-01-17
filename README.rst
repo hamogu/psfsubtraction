@@ -5,9 +5,11 @@ The ``psfsubtraction`` package
     :target: https://travis-ci.org/hamogu/psfsubtraction
     :alt: Travis CI status
 
-.. image:: https://coveralls.io/repos/hamogu/psfsubtraction/badge.png
-    :target: https://coveralls.io/r/hamogu/psfsubtraction
+.. image:: https://coveralls.io/repos/hamogu/psfsubtraction/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/hamogu/psfsubtraction?branch=master 
     :alt: Percentage of code covered in tests.
+
+	 
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org/
