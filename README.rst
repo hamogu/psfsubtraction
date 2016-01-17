@@ -13,8 +13,8 @@ The ``psfsubtraction`` package
     :target: http://www.astropy.org/
     :alt: Powered by astropy
 
-.. image:: https://readthedocs.org/projects/photutils/badge/?version=master
-    :target: http://photutils.readthedocs.org/en/master/
+.. image:: https://readthedocs.org/projects/photutils/badge/?version=latest
+    :target: http://photutils.readthedocs.org/en/latest/
     :alt: Documentation Status for master branch
 	   
 This is a package for fitting the PSF of a very bright object in CCD images with templates. Often, this approach allows for a better description of the PSF than the fit with an analytical model, specifically in the wings. This technique is important for planet detection in images or any other close object with a larger luminosity contrast, e.g. main-sequence companions of giant or supergiant stars.
