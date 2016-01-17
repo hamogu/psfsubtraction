@@ -10,7 +10,7 @@ Ccdproc has the following requirements:
 - `Astropy`_ v1.1 or later
 - `Numpy <http://www.numpy.org/>`_
 - `Scipy <http://www.scipy.org/>`_
-- `scikit-image <http://scikit-image.org/>`_
+- (optional) `scikit-image <http://scikit-image.org/>`_
 
 One easy way to get these dependencies is to install a python distribution like `anaconda <http://continuum.io/>`_.
 

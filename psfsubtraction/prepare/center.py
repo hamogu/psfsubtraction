@@ -2,9 +2,6 @@
 import numpy as np
 from scipy import ndimage, stats
 
-from skimage import filters as skfilter
-from skimage.morphology import convex_hull_image
-
 __all__ = ['fit_diffraction_spike', 'center_from_spikes']
 
 def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
@@ -107,7 +104,14 @@ def mask_spikes(image, m1, m2, maskwidth=3, **kwargs):
 
 
 def mask_readoutstreaks(image):
-    '''logarithmic image to edge detect faint features'''
+    '''logarithmic image to edge detect faint features
+
+    This requires the `scikit-image <http://scikit-image.org/>`_ package.
+    '''
+
+    from skimage import filters as skfilter
+    from skimage.morphology import convex_hull_image
+
     logimage = np.log10(np.clip(image, 1, 1e5)) / 5
     # Mask overexposed area + sobel edge detect
     mask = (skfilter.sobel(logimage) > 0.1) | (image > 0.6 * np.max(image))
