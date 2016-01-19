@@ -34,7 +34,7 @@ def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
     m, b : float
         coefficients for a line of the form y = m x + b
     '''
-    xm, ym = ndimage.center_of_mass(image)
+    xm, ym = ndimage.center_of_mass(np.ma.masked_invalid(image))
     s = np.hstack([np.arange(-r_outer, -r_inner), np.arange(r_inner, r_outer)])
     x = xm + s
     y = ym + fac * s
