@@ -15,6 +15,7 @@ list.
 '''
 import numpy as np
 
+__all__ = ['allbases', 'nonmaskedbases']
 
 def allbases(self, region):
     '''Return all available bases.'''

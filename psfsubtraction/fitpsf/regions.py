@@ -24,6 +24,9 @@ from astropy.coordinates import Angle
 
 from .utils import OptionalAttributeError
 
+__all__ = ['image_at_once', 'image_unmasked', 'pixel_by_pixel',
+           'group_by_basis', 'sectors', 'sectors_by_basis',
+           'mask_except_pixel']
 
 def image_at_once(self):
     '''Fit whole image at one.
@@ -75,10 +78,10 @@ def pixel_by_pixel(self):
     pixel only.
     This function returns one region per unmasked image pixel.
 
-    Note
-    ----
-    Even for images with just a few thousand pixels this method is
-    too expensive in run time.
+    .. note::
+
+       Even for images with just a few thousand pixels this method is
+       too expensive in run time.
 
     Returns
     -------

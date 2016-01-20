@@ -29,6 +29,8 @@ from scipy.ndimage import binary_dilation
 
 from .utils import OptionalAttributeError
 
+__all__ = ['identity', 'all_unmasked', 'dilated_region',
+           'around_region', 'wrapper_fitmask', 'wrapper_ignore_all_masked']
 
 def identity(self, region, indpsf):
     '''Return a input region as optimization region.'''

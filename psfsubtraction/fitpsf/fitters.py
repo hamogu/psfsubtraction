@@ -8,6 +8,12 @@ import findbase
 import optregion
 import fitpsf
 
+__all__ = ['RegionError', 'PSFIndexError',
+           'BasePSFFitter', 'SimpleSubtraction',
+           'UseAllPixelsSubtraction',
+           'LOCI', 'LOCIAllPixelsSubtraction',
+           ]
+
 
 class RegionError(Exception):
     '''Region does not have the right shape or dtype'''

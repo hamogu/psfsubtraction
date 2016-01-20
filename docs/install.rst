@@ -14,8 +14,8 @@ Ccdproc has the following requirements:
 
 One easy way to get these dependencies is to install a python distribution like `anaconda <http://continuum.io/>`_.
 
-Installing ccdproc
-==================
+Installing psfsubtraction
+=========================
 
 .. comment NOT on PIPY yet
 
