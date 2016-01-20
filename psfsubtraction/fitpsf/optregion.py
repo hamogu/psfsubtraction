@@ -1,8 +1,9 @@
 # Licensed under a MIT licence - see file `license`
 '''Function to construct the "optimization region" for a region.
 
-The "optimization region" is the region used in the fitting to find the best PSF for a
-region. The "optimization region" can (but usually will not) be identical to the region.
+The "optimization region" is the region used in the fitting to find the best
+PSF for a region. The "optimization region" can (but usually will not) be
+identical to the region.
 For example, if the base PSF is flat, and the region we are looking at
 contains some flat area and also a source, then the fit might tell us to
 subtract a constant so that the mean of the subtracted data is zero.
@@ -30,7 +31,8 @@ from scipy.ndimage import binary_dilation
 from .utils import OptionalAttributeError
 
 __all__ = ['identity', 'all_unmasked', 'dilated_region',
-           'around_region', 'wrapper_fitmask', 'wrapper_ignore_all_masked']
+           'around_region', 'wrapper_optmask', 'wrapper_ignore_all_masked']
+
 
 def identity(self, region, indpsf):
     '''Return a input region as optimization region.'''
@@ -65,11 +67,11 @@ def dilated_region(self, region, indpsf):
     - an int: In this case a square matrix of size 2 * n + 1 is used.
     - a matrix (see `scipy.ndimage.binary_dilation` for details.
 
-    Example
-    -------
+    Examples
+    --------
 
-    >>> from psfsubtraction import fitters
-    >>> from psfsubtraction import optregion
+    >>> from psfsubtraction.fitpsf import fitters
+    >>> from psfsubtraction.fitpsf import optregion
     >>> region = np.array([[True, False, False], \
                            [False, False, False], \
                            [False, False, False]])
@@ -99,11 +101,11 @@ def around_region(self, region, indpsf):
 
     See `dilated_region` for options.
 
-    Example
-    -------
+    Examples
+    --------
 
-    >>> from psfsubtraction import fitters
-    >>> from psfsubtraction import optregion
+    >>> from psfsubtraction.fitpsf import fitters
+    >>> from psfsubtraction.fitpsf import optregion
     >>> region = np.array([[True, False, False], \
                            [False, False, False], \
                            [False, False, False]])
@@ -122,18 +124,18 @@ def around_region(self, region, indpsf):
     return fitreg & ~np.asarray(region)
 
 
-def wrapper_fitmask(func):
-    '''Wrap a optregion function to apply an additional global mask.
+def wrapper_optmask(func):
+    '''Wrap an optregion function to apply an additional global mask.
 
-    This function wraps the optregion function ``func``. Fit regions are
-    determined by that function, but are then additionally filtered
-    such that points that are masked as ``True`` in ``self.fitmask`` are
+    This function wraps the optregion function ``func``. Optimization regions
+    are determined by that function, but are then additionally filtered
+    such that points that are masked as ``True`` in ``self.optmask`` are
     not included in the optimization region.
 
     One use case is an image with a source hidden in the PSF. Assume that
     this source is already known. We want to include it in ``region`` to make
-    sure that the PSF is removed under it, but we do not want to include it
-    in the fit of the PSF.
+    sure that the PSF is removed under it, but we do not want to include when
+    optimize the PSF.
     (A better alternative might be to fit its PSF at the same time, but that
     is beyond the scope of this module.)
 
@@ -144,26 +146,27 @@ def wrapper_fitmask(func):
 
     Returns
     -------
-    func_and_fitmask : function
+    func_and_optmask : function
         wrapped ``func``
     '''
-    def func_and_fitmask(self, region, indpsf):
-        if not hasattr(self, "fitmask"):
-            raise OptionalAttributeError('Fit object needs to define a boolean array fitmask.')
-        if not hasattr(self.fitmask, "shape") or \
-           not ((self.fitmask.shape == self.image.shape) or
-                (self.fitmask.shape == self.image1d.shape)):
-            raise OptionalAttributeError('"fitmask" must have same shape as image.')
+    def func_and_optmask(self, region, indpsf):
+        if not hasattr(self, "optmask"):
+            raise OptionalAttributeError('Fit object needs to define a boolean array optmask.')
+        if not hasattr(self.optmask, "shape") or \
+           not ((self.optmask.shape == self.image.shape) or
+                (self.optmask.shape == self.image1d.shape)):
+            raise OptionalAttributeError('"optmask" must have same shape as image.')
         optregion = func(self, region, indpsf)
 
-        optregion_and_fitmask = optregion & ~self.fitmask.flatten()
-        if optregion_and_fitmask.sum() <= np.asarray(indpsf).sum():
+        optregion_and_optmask = optregion & ~self.optmask.flatten()
+        if optregion_and_optmask.sum() <= np.asarray(indpsf).sum():
             warn('Fit underdetermined. Ignoring fitmask.')
             return optregion
         else:
-            return optregion_and_fitmask
+            return optregion_and_optmask
 
-    return func_and_fitmask
+    return func_and_optmask
+
 
 def wrapper_ignore_all_masked(func):
     '''Wrap a optregion function to remove all masked pixels from optregion.

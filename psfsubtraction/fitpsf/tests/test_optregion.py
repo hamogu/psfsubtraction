@@ -34,13 +34,13 @@ def test_unmasked(example3_3):
     assert np.all(f.optregion(~image.mask.flatten(), np.array([False, True])) == reg2.flatten())
 
 
-def test_wrapper_fitmask(example3_3):
+def test_wrapper_optmask(example3_3):
     psfarray, image = example3_3
 
     class psf(fitters.BasePSFFitter):
-        optregion = optregion.wrapper_fitmask(optregion.all_unmasked)
+        optregion = optregion.wrapper_optmask(optregion.all_unmasked)
 
-        fitmask = np.array([[True, True, False],
+        optmask = np.array([[True, True, False],
                             [False, False, False],
                             [False, False, False]])
 
@@ -51,7 +51,7 @@ def test_wrapper_fitmask(example3_3):
 
     assert np.all(f.optregion(~image.mask.flatten(), np.array([True, True])) == reg1.flatten())
 
-    f.fitmask = False
+    f.optmask = False
     with pytest.raises(OptionalAttributeError) as e:
         temp = f.optregion(~image.mask.flatten(), np.array([True, True]))
     assert "must have same shape" in str(e.value)

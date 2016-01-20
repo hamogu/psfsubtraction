@@ -20,7 +20,7 @@ The first paradigm is to make a single fitter object which is given the psf base
 
 Alternatively, we can make a class that encapsualtes all the properties that we need and make a new fitter objects for each image. This requires a little more memory, but it makes each fit entirely independend and thus the whole process is easily paralizable. On the flipside, we have to write a little more code to to the same thing:
 
-.. doctest-requires:: ipyparallel
+.. doctest-skip::
 		      
   >>> # get the clients for parallel execution ready.
   >>> from ipyparallel import Client

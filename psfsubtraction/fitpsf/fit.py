@@ -4,6 +4,7 @@ import numpy as np
 
 __all__ = ['psf_from_projection']
 
+
 def psf_from_projection(self, image1d, psfbase):
     '''solve a linear algebra system for the best PSF
 

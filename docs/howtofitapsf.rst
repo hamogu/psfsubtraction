@@ -78,7 +78,7 @@ or set as an attribute later::
 
 or be passed as an argument to the `~psfsubtraction.fitpsf.fitters.BasePSFFitter.remove_psf` or `~psfsubtraction.fitpsf.fitters.BasePSFFitter.fit_psf` functions::
 
-  >>> fitted_psf = fitter.fit_psf(image)
+  >>> fitted_psf = my_fitter.fit_psf(image)
 
 See :ref:`sect-two-ways-to-fit-image-list` for an example where each of these possibilities might be useful.
 

@@ -1,12 +1,12 @@
 # Licensed under a MIT licence - see file `license`
-import numpy as np
 import pytest
 
 from .. import fitters
 from .. import regions
 from .. import findbase
 from .. import optregion
-from .. import fitpsf
+from .. import fit
+
 
 class CannotDealWithMasked(fitters.BasePSFFitter):
     '''
@@ -19,7 +19,8 @@ class CannotDealWithMasked(fitters.BasePSFFitter):
     regions = regions.image_unmasked
     findbase = findbase.allbases
     optregion = optregion.identity
-    fitpsfcoeff = fitpsf.psf_from_projection
+    fitpsfcoeff = fit.psf_from_projection
+
 
 def test_cannotdealwithmasked(example3_3):
     '''check that psf_from_projection raises an erro if given masked data.'''

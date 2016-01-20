@@ -2,16 +2,18 @@
 from warnings import warn
 
 import numpy as np
+from scipy.ndimage import binary_dilation
 
 import regions
 import findbase
 import optregion
-import fitpsf
+import fit as fitpsf
 
 __all__ = ['RegionError', 'PSFIndexError',
            'BasePSFFitter', 'SimpleSubtraction',
            'UseAllPixelsSubtraction',
            'LOCI', 'LOCIAllPixelsSubtraction',
+           'CepheidSnapshotpaper'
            ]
 
 
@@ -318,3 +320,24 @@ class LOCIAllPixelsSubtraction(LOCI):
     _allow_masked_data = True
 
     regions = regions.sectors_by_basis
+
+
+class CepheidSnapshotpaper(LOCI):
+
+    _allow_masked_data = True
+
+    regions = regions.sectors_by_basis
+    optregion = optregion.wrapper_optmask(optregion.around_region)
+
+    mask_around_mask = 2
+
+    @property
+    def optmask(self):
+        selem = np.ones((2 * self.mask_around_mask + 1,
+                         2 * self.mask_around_mask + 1))
+        mask_around_mask = self.dim2to1(binary_dilation(
+                                    np.ma.getmaskarray(self.image), selem))
+        if hasattr(self, 'manual_optmask'):
+            return mask_around_mask | self.manual_optmask
+        else:
+            return mask_around_mask
