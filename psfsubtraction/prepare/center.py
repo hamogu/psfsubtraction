@@ -1,10 +1,42 @@
 # Licensed under a MIT licence - see file `license`
 import numpy as np
 from scipy import ndimage, stats
+from astropy.nddata.utils import extract_array
 
 __all__ = ['fit_diffraction_spike', 'center_from_spikes']
 
-def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
+
+def guess_center_nested(image, halfwidth=50):
+    '''Guess the position of the central object as two-step process
+
+    First, this function calculates the center of mass of an image.
+    This works well if the central object is the only bright source, however
+    even a moderately bright source that is far away can shift the center of
+    mass of an image by a few pixels. To improve the first guess the function
+    selects a subimage with the halfwidth ``halfwidth`` in a second step
+    and calculates the center of mass of that subimage.
+
+    Parameters
+    ---------
+    image : 2d np.array
+        input image
+    halfwidth : int
+        half width of the subimage selected in the second step.
+
+    Returns
+    -------
+    xm, ym : float
+        x and y coordinates estimated position of the central object
+    '''
+    xm, ym = ndimage.center_of_mass(np.ma.masked_invalid(image))
+    n = 2 * halfwidth + 1
+    subimage = extract_array(image, (n, n), (xm, ym))
+    x1, y1 = ndimage.center_of_mass(np.ma.masked_invalid(subimage))
+    return int(xm) - halfwidth + x1, int(ym) - halfwidth + y1
+
+
+def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25,
+                          initial_guess=ndimage.center_of_mass):
     '''fit a diffraction spike with a line
 
     Regions with low signal, i.e. regions where the maximum is not well
@@ -28,13 +60,20 @@ def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25):
     width : float
         For each column in the image, a ``width`` strip of pixels centered on the
         initial guess is extracted and the position of the maximum is recorded.
+    initial guess : tuple or callable
+        This can either be a numeric value for an initial guess such as
+        ``(54, 67.7)`` for a function that accepts and 2 d array (the image)
+        and returns an tuple.
 
     Returns
     -------
     m, b : float
         coefficients for a line of the form y = m x + b
     '''
-    xm, ym = ndimage.center_of_mass(np.ma.masked_invalid(image))
+    if callable(initial_guess):
+        xm, ym = initial_guess(image)
+    else:
+        xm, ym = initial_guess
     s = np.hstack([np.arange(-r_outer, -r_inner), np.arange(r_inner, r_outer)])
     x = xm + s
     y = ym + fac * s
