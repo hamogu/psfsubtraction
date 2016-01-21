@@ -211,7 +211,8 @@ class BasePSFFitter(object):
             optregion = self.anyreg_to_mask(self.optregion(region, indpsf))
 
             # Check for consistency
-            self.check_fittable(region, optregion, indpsf)
+            if not self.check_fittable(region, optregion, indpsf):
+                raise RegionError('Fit region contains to few data points.')
 
             # Perform fit on the optregion
             psf_coeff = self.fitpsfcoeff(self.image1d[optregion],
@@ -244,7 +245,9 @@ class BasePSFFitter(object):
         n_data = (optregion & ~np.ma.getmaskarray(self.image1d)).sum()
         n_pars = indpsf.sum()
         if n_data.sum() <= n_pars.sum():
-            raise RegionError('Fit region contains only {0} data points to fit {1} coefficients.'.format(n_data.sum(), n_pars.sum()))
+            return False
+        else:
+            return True
 
 
 class SimpleSubtraction(BasePSFFitter):
@@ -327,7 +330,8 @@ class CepheidSnapshotpaper(LOCI):
     _allow_masked_data = True
 
     regions = regions.sectors_by_basis
-    optregion = optregion.wrapper_optmask(optregion.around_region)
+    optregion = optregion.wrapper_ignore_all_masked(
+                  optregion.wrapper_optmask(optregion.around_region))
 
     mask_around_mask = 2
 
@@ -341,3 +345,20 @@ class CepheidSnapshotpaper(LOCI):
             return mask_around_mask | self.manual_optmask
         else:
             return mask_around_mask
+
+    def check_fittable(self, region, optregion, indpsf):
+        default_dilation = self.dilation_region
+
+        while not super(CepheidSnapshotpaper, self).check_fittable(region, optregion, indpsf):
+            # This means that the optregion is too small.
+            # That can happen for regions close to the bleed column where
+            # a lot of pixels are masked.
+            self.dilation_region += 2
+            if self.dilation_region >= 2 * max(self.image_dim):
+                raise RegionError('Too few data pixels even when increasing the size of the optimization region.')
+            # We need to change optregion in place otherwise the changes here
+            # do not take effect outside of this function.
+            optregion[:] = self.anyreg_to_mask(self.optregion(region, indpsf))
+            self.dilation_region += 2
+        self.dilation_region = default_dilation
+        return True

@@ -3,7 +3,9 @@ import numpy as np
 from scipy import ndimage, stats
 from astropy.nddata.utils import extract_array
 
-__all__ = ['fit_diffraction_spike', 'center_from_spikes']
+__all__ = ['fit_diffraction_spike',
+           'center_from_spikes',
+           'guess_center_nested']
 
 
 def guess_center_nested(image, halfwidth=50):
