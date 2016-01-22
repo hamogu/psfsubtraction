@@ -1,7 +1,7 @@
 # Licensed under a MIT licence - see file `license`
 import numpy as np
 from scipy import ndimage, stats
-from astropy.nddata.utils import extract_array
+from astropy.nddata.utils import extract_array, _round
 
 __all__ = ['fit_diffraction_spike',
            'center_from_spikes',
@@ -19,7 +19,7 @@ def guess_center_nested(image, halfwidth=50):
     and calculates the center of mass of that subimage.
 
     Parameters
-    ---------
+    ----------
     image : 2d np.array
         input image
     halfwidth : int
@@ -32,9 +32,12 @@ def guess_center_nested(image, halfwidth=50):
     '''
     xm, ym = ndimage.center_of_mass(np.ma.masked_invalid(image))
     n = 2 * halfwidth + 1
-    subimage = extract_array(image, (n, n), (xm, ym))
+    subimage, xmymsmall = extract_array(image, (n, n), (xm, ym),
+                                        return_position=True)
     x1, y1 = ndimage.center_of_mass(np.ma.masked_invalid(subimage))
-    return int(xm) - halfwidth + x1, int(ym) - halfwidth + y1
+    # xmymsmall is the xm, ym position in the coordinates of subimage
+    # So, correct the initial (xm, ym) by delta(xmsmall, x1)
+    return xm + (x1 - xmymsmall[0]), ym + (y1 - xmymsmall[1])
 
 
 def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25,
@@ -84,8 +87,8 @@ def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25,
     ymax = np.zeros((len(x)))
 
     for i in range(len(x)):
-        ytest[i, :] = image[np.int(x[i]), np.int(y[i] - width):
-                            np.int(y[i] + width + 1)]
+        ytest[i, :] = image[_round(x[i]), _round(y[i] - width):
+                            _round(y[i] + width + 1)]
     ymax = np.argmax(ytest, axis=1) - width
 
     # identify where there is actually a signal
