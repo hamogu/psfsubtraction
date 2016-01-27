@@ -95,3 +95,22 @@ def test_sector_regions():
         regs = regs.reshape((1200, -1))
         # Test that each pixel is part of one and only one region
         assert regs.sum() < 1200
+
+
+def test_wrapper_min_size(example3_3):
+    class MinSizeFitter(fitters.BasePSFFitter):
+        regions = regions.wrapper_min_size(regions.group_by_basis)
+
+    psfarray, image = example3_3
+
+    f = MinSizeFitter(psfarray, image)
+    regs = list(f.regions())
+    assert len(regs) == 3
+
+    f.region_min_size = 5
+    regs = list(f.regions())
+    assert len(regs) == 1
+
+    f.region_min_size = 6
+    regs = list(f.regions())
+    assert len(regs) == 0

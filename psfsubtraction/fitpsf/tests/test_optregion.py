@@ -116,3 +116,5 @@ def test_region_around_array(example3_3):
                          [True, False, False],
                          [False, False, False]], dtype=bool)
     assert np.all(fitreg == expected.ravel())
+
+

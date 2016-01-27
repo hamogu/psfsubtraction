@@ -335,6 +335,10 @@ class CepheidSnapshotpaper(LOCI):
 
     mask_around_mask = 2
 
+    def __init__(self, *args, **kwargs):
+        super(CepheidSnapshotpaper, self).__init__(*args, **kwargs)
+        self.manual_optmask = np.zeros(self.image_dim, dtype=bool)
+
     @property
     def optmask(self):
         selem = np.ones((2 * self.mask_around_mask + 1,

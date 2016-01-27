@@ -102,11 +102,8 @@ not. Most fitters that do **not** accept masked data will issue a warning or an
 exception when they encounter a mask.
 
 
-Ingredients for a fitter
+Advanced use of fitters
 -----------------------
-
-algorithm - how do the fitters work?
-4 basic functions...
 
 
 .. toctree::
