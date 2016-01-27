@@ -94,22 +94,15 @@ If a fitter has options, they are listed in the docstring.
 
 Masked data
 ^^^^^^^^^^^
-Not all fitters can deal with bad of missing data. However, all fitters accept `~numpy.ma.masked_array` objects as input, provided there are no maked values. This is done so that the same code can be used to read in the data and prepare the arrays for both fitters that treat masked data and those that do not.
+Not all fitters can deal with bad or missing data. However, all fitters accept
+`~numpy.ma.masked_array` objects as input, provided there are no maked
+values. This is done so that the same code can be used to read in the data and
+prepare the arrays for both fitters that treat masked data and those that do
+not. Most fitters that do **not** accept masked data will issue a warning or an
+exception when they encounter a mask.
 
-Predefined fitters
-^^^^^^^^^^^^^^^^^^
-.. currentmodule:: psfsubtraction.fitpsf.fitters
 
-.. autosummary::
-   :toctree: api
-
-   BasePSFFitter
-   SimpleSubtraction
-   UseAllPixelsSubtraction
-   LOCI
-   LOCIAllPixelsSubtraction
-
-Ingedients for a fitter
+Ingredients for a fitter
 -----------------------
 
 algorithm - how do the fitters work?
