@@ -171,8 +171,8 @@ def wrapper_optmask(func):
 def wrapper_ignore_all_masked(func):
     '''Wrap a optregion function to remove all masked pixels from optregion.
 
-    This function wraps the optregion function ``func``. Fit regions are
-    determined by that function, but are then additionally filtered
+    This function wraps the optregion function ``func``. Optimization regions
+    are determined by that function, but are then additionally filtered
     such that points that are masked in either the image or and used psfbase
     are not part of the returned ``optregion``.
 

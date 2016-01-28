@@ -329,7 +329,7 @@ class CepheidSnapshotpaper(LOCI):
 
     _allow_masked_data = True
 
-    regions = regions.sectors_by_basis
+    regions = regions.wrapper_min_size(regions.sectors_by_basis)
     optregion = optregion.wrapper_ignore_all_masked(
                   optregion.wrapper_optmask(optregion.around_region))
 
@@ -343,12 +343,11 @@ class CepheidSnapshotpaper(LOCI):
     def optmask(self):
         selem = np.ones((2 * self.mask_around_mask + 1,
                          2 * self.mask_around_mask + 1))
-        mask_around_mask = self.dim2to1(binary_dilation(
-                                    np.ma.getmaskarray(self.image), selem))
+        mask_around_mask = binary_dilation(np.ma.getmaskarray(self.image), selem)
         if hasattr(self, 'manual_optmask'):
-            return mask_around_mask | self.manual_optmask
+            return self.dim2to1(mask_around_mask | self.manual_optmask)
         else:
-            return mask_around_mask
+            return self.dim2to1(mask_around_mask)
 
     def check_fittable(self, region, optregion, indpsf):
         default_dilation = self.dilation_region
