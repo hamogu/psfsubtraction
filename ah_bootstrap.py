@@ -1,4 +1,3 @@
-# Licensed under a MIT licence - see file `license`
 """
 This bootstrap module contains code for ensuring that the astropy_helpers
 package will be importable by the time the setup.py script runs.  It also
@@ -410,7 +409,7 @@ class _Bootstrapper(object):
     def get_index_dist(self):
         if not self.download:
             log.warn('Downloading {0!r} disabled.'.format(DIST_NAME))
-            return False
+            return None
 
         log.warn(
             "Downloading {0!r}; run setup.py with the --offline option to "
