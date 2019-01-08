@@ -84,7 +84,7 @@ def dilated_region(self, region, indpsf):
     >>> myfitter.optregion(region, [0]).reshape((3, 3))
     array([[ True,  True, False],
            [ True,  True, False],
-           [False, False, False]], dtype=bool)
+           [False, False, False]])
     '''
     if not hasattr(self, 'dilation_region'):
         raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
@@ -118,7 +118,7 @@ def around_region(self, region, indpsf):
     >>> myfitter.optregion(region.ravel(), [0]).reshape((3, 3))
     array([[False,  True, False],
            [ True,  True, False],
-           [False, False, False]], dtype=bool)
+           [False, False, False]])
     '''
     fitreg = dilated_region(self, region, indpsf)
     return fitreg & ~np.asarray(region)
