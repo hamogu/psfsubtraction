@@ -39,6 +39,13 @@ env:
         - CONDA_DEPENDENCIES='scipy photutils'
         - CONDA_DEPENDENCIES_DOC='sphinx-astropy'
 
+        # Conda packages for affiliated packages are hosted in channel
+        # "astropy" while builds for astropy LTS with recent numpy versions
+        # are in astropy-ci-extras. If your package uses either of these,
+        # add the channels to CONDA_CHANNELS along with any other channels
+        # you want to use.
+        - CONDA_CHANNELS='astropy-ci-extras astropy'
+
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
         # - SETUP_XVFB=True
@@ -70,8 +77,8 @@ matrix:
         - os: linux
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
-        - os: linux
-          env: ASTROPY_VERSION=lts
+        #- os: linux
+        #  env: ASTROPY_VERSION=lts
 
         # Try all python versions and Numpy versions. Since we can assume that
         # the Numpy developers have taken care of testing Numpy with different
@@ -79,11 +86,11 @@ matrix:
         # time.
 
         - os: linux
-          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.12
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.14
         - os: linux
           env: PYTHON_VERSION=3.6 NUMPY_VERSION=1.13
-        - os: linux
-          env: NUMPY_VERSION=1.14
+        #- os: linux
+        #  env: NUMPY_VERSION=1.14
 
         # Try numpy pre-release
         - os: linux
