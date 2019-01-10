@@ -133,7 +133,7 @@ class BasePSFFitter(object):
         '''This function should be overwritten by derived classes.'''
         raise NotImplementedError
 
-    ### Some wrapper around the above classes to unify output formats, check
+    ### Some wrappers around the above classes to unify output formats, check
     ### validity etc.
 
     def anyreg_to_mask(self, reg):
@@ -316,7 +316,7 @@ class LOCIAllPixelsSubtraction(LOCI):
 
     For unmasked image pixel the maximal set of PSF templates that are
     unmasked at that position is used.
-    Pixels are then group in regions that make use of the same PSF templates.
+    Pixels are then grouped in regions that make use of the same PSF templates.
     '''
 
     '''Can this fitter deal with masked data?'''
