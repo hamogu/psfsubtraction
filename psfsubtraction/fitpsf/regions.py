@@ -134,7 +134,7 @@ def _by_basis(self, imagemask):
         if not imagemask[i] and ((~basemask[i, :]).sum() >= min_bases):
             D[tuple(basemask[i, :])].append(i)
 
-    return D.itervalues()
+    return D.values()
 
 
 def sectors(self):
