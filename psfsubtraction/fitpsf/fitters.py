@@ -4,10 +4,10 @@ from warnings import warn
 import numpy as np
 from scipy.ndimage import binary_dilation
 
-import regions
-import findbase
-import optregion
-import fit as fitpsf
+from . import regions
+from . import findbase
+from . import optregion
+from . import fit as fitpsf
 
 __all__ = ['RegionError', 'PSFIndexError',
            'BasePSFFitter', 'SimpleSubtraction',
