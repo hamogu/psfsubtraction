@@ -134,7 +134,7 @@ def _by_basis(self, imagemask):
         if not imagemask[i] and ((~basemask[i, :]).sum() >= min_bases):
             D[tuple(basemask[i, :])].append(i)
 
-    return D.itervalues()
+    return D.values()
 
 
 def sectors(self):
@@ -192,8 +192,10 @@ def sectors(self):
 
     for ri in range(len(radius) - 1):
         for phii in range(len(phi) - 1 ):
-            yield (r >= radius[ri]) & (r < radius[ri + 1]) \
+            sector = (r >= radius[ri]) & (r < radius[ri + 1]) \
                 & (phiarr >= phi[phii]) & (phiarr < phi[phii + 1])
+            if sector.sum() > 0:
+                yield sector
 
 
 def sectors_by_basis(self):

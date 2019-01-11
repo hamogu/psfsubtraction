@@ -5,7 +5,7 @@ import astropy.units as u
 
 from .. import fitters
 from .. import regions
-from ..utils import OptionalAttributeError, bool_indarray
+from ..utils import bool_indarray
 
 
 def test_image_at_once(example3_3):
@@ -73,7 +73,7 @@ def test_sector_regions():
     psfs = np.ones((30, 40, 15))
     for center in [(1, 7), None]:
         for r, phi in zip([np.arange(55), np.array([0, 1, 5, 55])],
-                          [5, np.linspace(0., 360., 5.) * u.degree]):
+                          [5, np.linspace(0., 360., 5) * u.degree]):
             class PSF(fitters.BasePSFFitter):
                 regions = regions.sectors
                 sector_radius = r

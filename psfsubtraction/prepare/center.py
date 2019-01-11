@@ -1,7 +1,7 @@
 # Licensed under a MIT licence - see file `license`
 import numpy as np
 from scipy import ndimage, stats
-from astropy.nddata.utils import extract_array, _round
+from astropy.nddata.utils import extract_array
 
 __all__ = ['fit_diffraction_spike',
            'center_from_spikes',
@@ -87,8 +87,8 @@ def fit_diffraction_spike(image, fac=1, r_inner=50, r_outer=250, width=25,
     ymax = np.zeros((len(x)))
 
     for i in range(len(x)):
-        ytest[i, :] = image[_round(x[i]), _round(y[i] - width):
-                            _round(y[i] + width + 1)]
+        ytest[i, :] = image[int(np.round(x[i])), int(np.round(y[i] - width)):
+                            int(np.round(y[i] + width + 1))]
     ymax = np.argmax(ytest, axis=1) - width
 
     # identify where there is actually a signal
