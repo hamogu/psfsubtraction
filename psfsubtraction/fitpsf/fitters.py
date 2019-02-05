@@ -1,4 +1,5 @@
 # Licensed under a MIT licence - see file `license`
+import copy
 from warnings import warn
 
 import numpy as np
@@ -350,7 +351,7 @@ class CepheidSnapshotpaper(LOCI):
             return self.dim2to1(mask_around_mask)
 
     def check_fittable(self, region, optregion, indpsf):
-        default_dilation = self.dilation_region
+        default_dilation = copy.copy(self.dilation_region)
 
         while not super(CepheidSnapshotpaper, self).check_fittable(region, optregion, indpsf):
             # This means that the optregion is too small.
