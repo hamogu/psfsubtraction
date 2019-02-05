@@ -7,17 +7,8 @@ The function should return an iterable, e.g. an iterator or a list of regions.
 A "region" should be be a True/False index array of the same size as the
 flattend (1-dimensional representation) image.
 '''
-from __future__ import division
-
 from collections import defaultdict
-
-# Python 2/3
-try:
-    import itertools.imap as map
-except ImportError:
-    pass
-
-
+from itertools import filterfalse
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import Angle
@@ -94,7 +85,7 @@ def pixel_by_pixel(self):
     mask = image_unmasked(self)[0]
 
     return map(mask_except_pixel,
-               ifilterfalse(lambda x: mask[x], range(len(mask))))
+               filterfalse(lambda x: mask[x], range(len(mask))))
 
 
 def group_by_basis(self):
