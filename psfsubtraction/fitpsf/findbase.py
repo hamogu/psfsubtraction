@@ -1,8 +1,8 @@
 # Licensed under a MIT licence - see file `license`
-'''Functions to select that bases used in a PSF fit.
+'''Functions to select bases used in a PSF fit.
 
-These functions meant to be included into a `PSFFitter` object and this they
-all take the ``self`` argument.
+These functions are meant to be included into a `PSFFitter` object and thus
+they all take the ``self`` argument.
 
 All functions here take two arguments:
 
@@ -16,6 +16,7 @@ list.
 import numpy as np
 
 __all__ = ['allbases', 'nonmaskedbases']
+
 
 def allbases(self, region):
     '''Return all available bases.'''

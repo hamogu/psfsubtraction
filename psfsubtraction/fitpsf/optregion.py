@@ -59,7 +59,7 @@ def all_unmasked(self, region, indpsf):
     return optregion
 
 
-def dilated_region(self, region, indpsf):
+def dilated_region(self, region, indpsf, dilation_region=None):
     '''Specify a optimization region that extends around the ``region``.
 
     This requires that the fitter has an attribute ``dilatation_region``, which
@@ -87,21 +87,30 @@ def dilated_region(self, region, indpsf):
            [ True,  True, False],
            [False, False, False]])
 
+    Notes
+    -----
+    A flamegraph shows that binary_dilation is VERY slow and consumes over
+    50% of the entire runtime for Cepheid data reduction.
     '''
-    if not hasattr(self, 'dilation_region'):
-        raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
-                                     + 'which is either and int or a square matrix.')
-    if np.isscalar(self.dilation_region):
-        selem = np.ones((2 * self.dilation_region + 1, 2 * self.dilation_region + 1))
+    if dilation_region is None:
+        if hasattr(self, 'dilation_region'):
+            dilation_region = self.dilation_region
+        else:
+            raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
+                                         + 'which is either an int or a square matrix.')
+    if np.isscalar(dilation_region):
+        selem = np.ones((2 * dilation_region + 1, 2 * dilation_region + 1))
     else:
-        selem = self.dilation_region
+        selem = dilation_region
     return self.dim2to1(binary_dilation(self.dim1to2(region), selem))
 
 
 def around_region(self, region, indpsf):
     '''similar to `dilated_region`, but exclude all pixels in ``region`` itself.
 
-    See `dilated_region` for options.
+    This function constructs a region around the input ``region``. It leaves
+    an inner rim which is ``border_around_region`` wide, and goes to an outer rim
+    that is no more than ``dilation_region`` away form the original ``region``.
 
     Examples
     --------
@@ -123,7 +132,13 @@ def around_region(self, region, indpsf):
            [False, False, False]])
     '''
     fitreg = dilated_region(self, region, indpsf)
-    return fitreg & ~np.asarray(region)
+
+    if hasattr(self, 'border_around_region'):
+        exclude_reg = dilated_region(self, region, indpsf, self.border_around_region)
+    else:
+        exclude_reg = region
+
+    return fitreg & ~np.asarray(exclude_reg)
 
 
 def wrapper_optmask(func):

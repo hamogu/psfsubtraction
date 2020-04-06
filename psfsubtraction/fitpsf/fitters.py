@@ -254,8 +254,7 @@ class BasePSFFitter(object):
 class SimpleSubtraction(BasePSFFitter):
     '''Simple examples of PSF fitting.
 
-    - The whole (unmasked) image is fit at once
-    - using all bases.
+    The whole (unmasked) image is fit at once using all bases.
     '''
     regions = regions.image_unmasked
     findbase = findbase.allbases
@@ -334,7 +333,8 @@ class CepheidSnapshotpaper(LOCI):
     optregion = optregion.wrapper_ignore_all_masked(
                   optregion.wrapper_optmask(optregion.around_region))
 
-    mask_around_mask = 2
+    mask_around_mask = 0
+    border_around_region = 5
 
     def __init__(self, *args, **kwargs):
         super(CepheidSnapshotpaper, self).__init__(*args, **kwargs)
@@ -353,7 +353,7 @@ class CepheidSnapshotpaper(LOCI):
     def check_fittable(self, region, optregion, indpsf):
         default_dilation = copy.copy(self.dilation_region)
 
-        while not super(CepheidSnapshotpaper, self).check_fittable(region, optregion, indpsf):
+        while not super().check_fittable(region, optregion, indpsf):
             # This means that the optregion is too small.
             # That can happen for regions close to the bleed column where
             # a lot of pixels are masked.
@@ -366,3 +366,27 @@ class CepheidSnapshotpaper(LOCI):
             self.dilation_region += 2
         self.dilation_region = default_dilation
         return True
+
+
+class CSPFakeSourcePartialFitting(CepheidSnapshotpaper):
+    '''A modified version of the CSP fitter, that refits only some regions.
+
+    This is used when inserting fake sources into images. Only the regions that
+    actually overlap with the inserted source need to be refit, the value
+    of the residual image for the remaining area can just be taken from a
+    previously reduced image. This class implements a remove_psf function that
+    can do that.
+
+    Note a subtlety here: Inserting a new fake source should change the
+    opt_mask region and thus may influence other source in the field, too. This
+    class ignore that effect to speed up calculations.
+    '''
+
+    regions = regions.wrapper_overlap_region(
+        regions.wrapper_min_size(regions.sectors_by_basis))
+
+    def remove_psf(self, image, region_to_use, residual_image):
+        self.region_to_use = region_to_use
+        resid_im = super().remove_psf(image)
+        resid_im[resid_im.mask] = residual_image[resid_im.mask]
+        return resid_im
