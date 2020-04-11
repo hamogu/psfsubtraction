@@ -23,8 +23,8 @@ def psf_from_projection(self, image1d, psfbase):
 
     Raises
     ------
-    ValueError : If given masked data, because `numpy.linalg.solve` would silently
-        use the "values behind the mask".
+    ValueError : If given masked data, because `numpy.linalg.solve` would
+        silently use the "values behind the mask".
     '''
     if (np.ma.getmask(image1d).sum() > 0 or np.ma.getmask(psfbase).sum() > 0):
             raise ValueError('This fitter cannot deal with masked data.')

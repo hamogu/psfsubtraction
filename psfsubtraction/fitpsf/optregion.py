@@ -11,8 +11,8 @@ Instead, if we look for the best fit for the source and we use only the
 surrounding flat region, then we will be left with the source after the
 subtraction - exactly what we want.
 
-These functions meant to be included into a `PSFFitter` object and this they
-all take the ``self`` argument.
+These functions are meant to be included into a `PSFFitter` object and thus
+they all take the ``self`` argument.
 
 All functions here take three arguments:
 
@@ -59,10 +59,11 @@ def all_unmasked(self, region, indpsf):
     return optregion
 
 
-def dilated_region(self, region, indpsf):
+def dilated_region(self, region, indpsf, dilation_region=None):
     '''Specify a optimization region that extends around the ``region``.
 
-    This requires that the fitter has an attribute ``dilatation_region``, which can be
+    This requires that the fitter has an attribute ``dilatation_region``, which
+    can be
 
     - an int: In this case a square matrix of size 2 * n + 1 is used.
     - a matrix (see `scipy.ndimage.binary_dilation` for details.
@@ -78,28 +79,38 @@ def dilated_region(self, region, indpsf):
     >>> class DilationFitter(fitters.SimpleSubtraction):
     ...     optregion = optregion.dilated_region
     ...     dilation_region = 1
-    >>> dummy_image = np.ones((3, 3)) # boring image, but good enough for the example
+    >>> dummy_image = np.ones((3, 3)) # boring image just as example
     >>> dummy_psfs = np.ones((3,3,4)) # even more boring psf array.
     >>> myfitter = DilationFitter(dummy_psfs, dummy_image)
     >>> myfitter.optregion(region, [0]).reshape((3, 3))
     array([[ True,  True, False],
            [ True,  True, False],
            [False, False, False]])
+
+    Notes
+    -----
+    A flamegraph shows that binary_dilation is VERY slow and consumes over
+    50% of the entire runtime for Cepheid data reduction.
     '''
-    if not hasattr(self, 'dilation_region'):
-        raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
-                                     + 'which is either and int or a square matrix.')
-    if np.isscalar(self.dilation_region):
-        selem = np.ones((2 * self.dilation_region + 1, 2 * self.dilation_region + 1))
+    if dilation_region is None:
+        if hasattr(self, 'dilation_region'):
+            dilation_region = self.dilation_region
+        else:
+            raise OptionalAttributeError('Fitter must speficy the `self.dilation_region`\n'
+                                         + 'which is either an int or a square matrix.')
+    if np.isscalar(dilation_region):
+        selem = np.ones((2 * dilation_region + 1, 2 * dilation_region + 1))
     else:
-        selem = self.dilation_region
+        selem = dilation_region
     return self.dim2to1(binary_dilation(self.dim1to2(region), selem))
 
 
 def around_region(self, region, indpsf):
     '''similar to `dilated_region`, but exclude all pixels in ``region`` itself.
 
-    See `dilated_region` for options.
+    This function constructs a region around the input ``region``. It leaves
+    an inner rim which is ``border_around_region`` wide, and goes to an outer rim
+    that is no more than ``dilation_region`` away form the original ``region``.
 
     Examples
     --------
@@ -121,7 +132,13 @@ def around_region(self, region, indpsf):
            [False, False, False]])
     '''
     fitreg = dilated_region(self, region, indpsf)
-    return fitreg & ~np.asarray(region)
+
+    if hasattr(self, 'border_around_region'):
+        exclude_reg = dilated_region(self, region, indpsf, self.border_around_region)
+    else:
+        exclude_reg = region
+
+    return fitreg & ~np.asarray(exclude_reg)
 
 
 def wrapper_optmask(func):
@@ -173,7 +190,7 @@ def wrapper_ignore_all_masked(func):
 
     This function wraps the optregion function ``func``. Optimization regions
     are determined by that function, but are then additionally filtered
-    such that points that are masked in either the image or and used psfbase
+    such that points that are masked in either the image or any used psfbase
     are not part of the returned ``optregion``.
 
     Parameters
